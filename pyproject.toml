@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "result"
-version = "0.1.0"
+version = "0.1.1a0"
 description = ""
 authors = ["Markus Iorio <markus.iorio@bfd.de>"]
 readme = "README.md"
@@ -16,9 +16,8 @@ mypy = "^1.10.0"
 coverage = "^7.5.2"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core", "setuptools>=70.0.0"]
 build-backend = "poetry.core.masonry.api"
-
 
 
 [tool.coverage.run]
@@ -29,32 +28,32 @@ exclude_lines = ["pragma: no cover", "raise NotImplementedError"]
 
 [tool.ruff]
 exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pyenv",
-    ".pytest_cache",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    ".vscode",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "site-packages",
-    "venv",
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "site-packages",
+  "venv",
 ]
 line-length = 88
 indent-width = 4
