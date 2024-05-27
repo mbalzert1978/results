@@ -216,6 +216,18 @@ files = [
 ]
 
 [[package]]
+name = "sourcery"
+version = "1.18.0"
+description = "Magically refactor Python"
+optional = false
+python-versions = "*"
+files = [
+    {file = "sourcery-1.18.0-py2.py3-none-macosx_10_9_universal2.whl", hash = "sha256:f5d35a0136a576800dffedd8537c74da16ca2c507b829d7d8b7ac17d1cc710ab"},
+    {file = "sourcery-1.18.0-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:c7770c031816777fbd63e213b3f225bc20d2cbef897e2759a9389332e8c3fed1"},
+    {file = "sourcery-1.18.0-py2.py3-none-win_amd64.whl", hash = "sha256:1c0478e2fdf7f650e8dd97ee5f7d34fd114415af22470eda3d749f2d2841d084"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -229,4 +241,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "1f91937d81c481c8007a1916653ab170fde292d46ea230ff2e3af2c3343333e5"
+content-hash = "bb66000202168448a2834e5293c4d2fd3bfd595bc33edb1d960b33c3608c7a60"
