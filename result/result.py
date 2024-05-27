@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+import abc
 import functools
 import typing
-import abc
-
 
 T = typing.TypeVar("T")
 E = typing.TypeVar("E")
@@ -136,16 +135,6 @@ class Result(abc.ABC, typing.Generic[T, E]):
         >>> assert Result.Ok(2).is_ok_and(lambda x: x > 1)
         >>> assert not Result.Ok(0).is_ok_and(lambda x: x > 1)
         >>> assert not Result.Err("Something went wrong").is_ok_and(lambda x: x > 1)
-        """
-
-    @abc.abstractmethod
-    def iter(self) -> typing.Iterator[T | None]:
-        """
-        Returns an iterator over the contained value.
-        # Examples:
-
-        >>> assert list(Result.Ok(5)) == [5]
-        >>> assert list(Result.Err("Nothing here")) == [None]
         """
 
     @abc.abstractmethod
@@ -331,9 +320,6 @@ class Ok(Result[T, typing.Any]):
     def is_ok_and(self, fn: typing.Callable[[T], bool]) -> bool:
         return fn(self._inner_value)
 
-    def iter(self) -> typing.Iterator[T | None]:
-        return self.__iter__()
-
     def map(self, fn: typing.Callable[[T], U]) -> Result[U, E]:
         return Result.Ok(fn(self._inner_value))
 
@@ -415,9 +401,6 @@ class Err(Result[typing.Any, E]):
 
     def is_ok_and(self, fn: typing.Callable[[T], bool]) -> bool:
         return False
-
-    def iter(self) -> typing.Iterator[None]:
-        return self.__iter__()
 
     def map(self, fn: typing.Callable[[T], U]) -> Result[U, E]:
         return self

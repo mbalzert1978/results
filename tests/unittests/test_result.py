@@ -156,11 +156,6 @@ def test_unwrap_or_else_when_ok_value_should_return_value_or_compute_from_functi
     assert Result.Err("foo").unwrap_or_else(count) == 3
 
 
-def test_iter_when_ok_value_should_yield_value_or_none() -> None:
-    assert list(Result.Ok(5).iter()) == [5]
-    assert list(Result.Err("Nothing here").iter()) == [None]
-
-
 def test_as_result_when_wrapping_a_function_should_return_a_new_fn_that_returns_a_result() -> (
     None
 ):
