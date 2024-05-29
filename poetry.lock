@@ -144,6 +144,24 @@ files = [
 ]
 
 [[package]]
+name = "option"
+version = "0.1.1a1"
+description = "A simple Option type for Python 3 inspired by Rust, fully type annotated."
+optional = false
+python-versions = "^3.11"
+files = []
+develop = false
+
+[package.dependencies]
+result = {git = "https://github.com/mbalzert1978/result.git"}
+
+[package.source]
+type = "git"
+url = "https://github.com/mbalzert1978/option.git"
+reference = "HEAD"
+resolved_reference = "40ae050f14c839a0103b3b47a8850eb8af9d1991"
+
+[[package]]
 name = "packaging"
 version = "24.0"
 description = "Core utilities for Python packages"
@@ -241,4 +259,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "bb66000202168448a2834e5293c4d2fd3bfd595bc33edb1d960b33c3608c7a60"
+content-hash = "25ad01fe0e7d67d9d0fec4ffeada17ed0fb1110c9f2d3151cd8e4bad79248f62"
