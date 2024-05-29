@@ -42,11 +42,11 @@ class Result(abc.ABC, typing.Generic[T, E]):
         """
 
         @functools.wraps(fn)
-        def inner(*args: P.args, **kwargs: P.kwargs) -> Result[T, E]:
+        def inner(*args: P.args, **kwargs: P.kwargs) -> Result[T, Exception]:
             try:
                 result = fn(*args, **kwargs)
             except Exception as exc:
-                return Result.Err(typing.cast(E, exc))
+                return Result.Err(exc)
             else:
                 return Result.Ok(result)
 
