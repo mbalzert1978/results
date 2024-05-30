@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "result"
+name = "results"
 version = "0.1.6a0"
 description = ""
 authors = ["Markus Iorio <markus.iorio@bfd.de>"]
@@ -7,7 +7,6 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-option = {git = "https://github.com/mbalzert1978/option.git"}
 
 
 [tool.poetry.group.dev.dependencies]

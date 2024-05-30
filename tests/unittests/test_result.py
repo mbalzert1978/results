@@ -1,9 +1,8 @@
 import re
 
 import pytest
-from option import Null, Some
 
-from result import Err, Ok, Result, UnwrapFailedError
+from results import Err, Null, Ok, Result, Some, UnwrapFailedError
 
 
 def get_test_error():
