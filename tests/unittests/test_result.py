@@ -398,13 +398,21 @@ def test_unwrap_or_else(result, func, expected):
     assert result.unwrap_or_else(func) == expected
 
 
-def test_as_result():
+def test_as_result() -> None:
     @Result.as_result
     def div(a: int, b: int) -> float:
         return a / b
 
     assert div(10, 2) == Ok(5.0)
     assert div(10, 0).map_err(str) == Err("division by zero")
+
+
+def test_from_fn() -> None:
+    def div(a: int, b: int) -> float:
+        return a / b
+
+    assert Result.from_fn(div, 10, 2) == Ok(5.0)
+    assert Result.from_fn(div, 10, 0).map_err(str) == Err("division by zero")
 
 
 def test_repr():

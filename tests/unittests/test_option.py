@@ -70,6 +70,20 @@ def test_option_filter_when_predicate_is_called_should_return_some_if_true_and_n
     assert option.filter(predicate) == expected
 
 
+def test_option_from_fn_when_some_should_return_some() -> None:
+    values = {
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5,
+        "6": 6,
+    }
+
+    assert Option.from_fn(dict.get, values, "1") == Some(1)
+    assert Option.from_fn(dict.get, values, "7") == Null(None)
+
+
 @pytest.mark.parametrize(
     "option, expected",
     [

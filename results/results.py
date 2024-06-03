@@ -41,6 +41,17 @@ class Result(abc.ABC, typing.Generic[T, E]):
 
         return inner
 
+    @staticmethod
+    def from_fn(
+        fn: typing.Callable[P, T], *args: P.args, **kwargs: P.kwargs
+    ) -> Result[T, Exception]:
+        try:
+            result = fn(*args, **kwargs)
+        except Exception as exc:
+            return Err(exc)
+        else:
+            return Ok(result)
+
     @abc.abstractmethod
     def err(self) -> typing.Optional[E]: ...
 
@@ -297,6 +308,13 @@ class Option(abc.ABC, typing.Generic[T, N]):
 
     @abc.abstractmethod
     def filter(self, predicate: typing.Callable[[T], bool]) -> Option[T, N]: ...
+    @staticmethod
+    def from_fn(
+        fn: typing.Callable[P, T], *args: P.args, **kwargs: P.kwargs
+    ) -> Option[T, N]:
+        if (result := fn(*args, **kwargs)) is None:
+            return Null(result)
+        return Some(result)
 
     @abc.abstractmethod
     def is_null(self) -> bool: ...

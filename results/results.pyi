@@ -78,6 +78,19 @@ class Result(Generic[T, E]):
         >>> with pytest.raises(UnwrapFailedError, match="Testing expect error"):
         ...    Result.Ok(10).expect_err("Testing expect error")
         """
+    @staticmethod
+    def from_fn(
+        fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs
+    ) -> Result[T, Exception]:
+        """Turns a function so that it returns a `Result<T, E>` instead of `T`.
+        # Examples:
+
+        >>> def div(a: int, b: int) -> float:
+        ...     return a / b
+        ...
+        >>> assert Result.from_fn(div, 10, 2) == Result.Ok(5.0)
+        >>> assert Result.from_fn(div, 10, 0).map_err(str) == Result.Err("division by zero")
+        """
 
     def is_err(self) -> bool:
         """Returns `True` if the result is [`Err`].
@@ -323,6 +336,21 @@ class Option(Generic[T, N]):
         >>> assert Some(10).filter(is_even) == Some(10)
         >>> assert Some(15).filter(is_even) == Null(None)
         >>> assert Null(10).filter(is_even) == Null(10)
+        """
+    @staticmethod
+    def from_fn(
+        fn: Callable[P, T | N], *args: P.args, **kwargs: P.kwargs
+    ) -> Option[T, N]:
+        """Turns a function so that it returns a `Option<T, N>` instead of `T | None`.
+
+        Caller is responsible for ensuring that the function does not raise an exception.
+        # Examples:
+
+        >>> def get(a: int, b: int) -> float:
+        ...     return a / b
+        ...
+        >>> assert Result.from_fn(div, 10, 2) == Result.Ok(5.0)
+        >>> assert Result.from_fn(div, 10, 0).map_err(str) == Result.Err("division by zero")
         """
     def is_null(self) -> bool:
         """

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "results"
-version = "0.1.6a1"
+version = "0.1.6a2"
 description = ""
 authors = ["Markus Iorio <markus.iorio@bfd.de>"]
 readme = "README.md"
