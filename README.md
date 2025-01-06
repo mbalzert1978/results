@@ -11,16 +11,23 @@ This library provides a robust mechanism for handling operations that can result
 ## Project Structure
 
 ```
-.
-├── README.md
-├── poetry.lock
+├── .python-version
 ├── pyproject.toml
-├── result
-│   └── result.py
+├── README.md
+├── uv.lock
+├── src
+│   └── results
+│       ├── __init__.py
+│       ├── py.typed
+│       ├── results.py
+│       └── results.pyi
 └── tests
     ├── __init__.py
-    └── unittests
+    └── results
         ├── __init__.py
+        ├── test_factories.py
+        ├── test_option.py
+        ├── test_pattern_matching.py
         └── test_result.py
 ```
 
