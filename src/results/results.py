@@ -3,9 +3,7 @@ from __future__ import annotations
 import abc
 import functools
 from collections.abc import Callable, Iterator
-from typing import Any, Literal, NoReturn, ParamSpec, cast, final
-
-P = ParamSpec("P")
+from typing import Any, Literal, NoReturn, cast, final
 
 
 class ResultError(Exception):
@@ -31,7 +29,7 @@ class Result[T, E](abc.ABC):
         """
 
     @staticmethod
-    def as_result(fn: Callable[P, T]) -> Callable[P, Result[T, Exception]]:
+    def as_result[**P](fn: Callable[P, T]) -> Callable[P, Result[T, Exception]]:
         """Decorates a function so that it returns a `Result<T, E>` instead of `T`.
         # Examples:
 
@@ -54,7 +52,7 @@ class Result[T, E](abc.ABC):
         return inner
 
     @staticmethod
-    def from_fn(
+    def from_fn[**P](
         fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs
     ) -> Result[T, Exception]:
         try:
@@ -358,7 +356,9 @@ class Option[T: object]:
         self._content = content
 
     @staticmethod
-    def from_fn(fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> Option[T]:
+    def from_fn[**P](
+        fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs
+    ) -> Option[T]:
         """Turns a function so that it returns a `Option<T, N>` instead of `T | None`.
 
         Caller is responsible for ensuring that the function does not raise an exception.
@@ -373,7 +373,7 @@ class Option[T: object]:
         return Null() if (result := fn(*args, **kwargs)) is None else Some(result)
 
     @staticmethod
-    def as_option(fn: Callable[P, T]) -> Callable[P, Option[T]]:
+    def as_option[**P](fn: Callable[P, T]) -> Callable[P, Option[T]]:
         """
         Decorates a function so that it returns a `Optional<T>` instead of `T`.
 
