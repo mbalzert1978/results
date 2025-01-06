@@ -6,7 +6,69 @@ This library provides a robust mechanism for handling operations that can result
 
 - **Result Type**: Encapsulate successful outcomes with `Ok` and failures with `Err`.
 - **Comprehensive API**: Methods for checking, transforming, and retrieving contained values or errors.
-- **Functional Programming Friendly**: Supports map, map_err, and_then, and more to work with results without explicit error checking.
+- **Functional Programming Friendly**: Supports `map`, `map_err`, `and_then`, and more to work with results without explicit error checking.
+- **Option Type**: Provides `Some` and `Null` to handle optional values, similar to `Option` in Rust.
+- **Error Handling**: Custom exceptions like `UnwrapFailedError` and `TransposeError` for robust error management.
+
+## Classes and Methods
+
+### Result
+
+- **and_then**: Chains operations on `Ok` values.
+  ```python
+  >>> assert Result.Ok(2).and_then(sq_then_to_string) == Ok("4")
+  >>> assert Result.Err("Not a number").and_then(sq_then_to_string) == Err("Not a number")
+  ```
+
+- **as_result**: Decorator to convert function return values to `Result`.
+  ```python
+  >>> @Result.as_result
+  >>> def div(a: int, b: int) -> float:
+  ...     return a / b
+  >>> assert div(10, 2) == Result.Ok(5.0)
+  >>> assert div(10, 0).map_err(str) == Result.Err("division by zero")
+  ```
+
+- **from_fn**: Executes a function and returns a `Result`.
+
+- **err, expect, expect_err**: Methods to handle and retrieve error values.
+
+- **is_err, is_ok**: Check the state of the result.
+
+- **map, map_err, map_or, map_or_else**: Transform contained values.
+
+- **ok, or_else, unwrap, unwrap_err, unwrap_or, unwrap_or_else**: Retrieve values with error handling.
+
+### Ok
+
+- Represents a successful result.
+- Methods to transform and retrieve the contained value.
+
+### Err
+
+- Represents a failed result.
+- Methods to handle and transform the error value.
+
+### Option
+
+- **Some**: Represents an optional value.
+  ```python
+  >>> assert Option.some(10) == Some(10)
+  ```
+
+- **Null**: Represents the absence of a value.
+  ```python
+  >>> assert Option.null("Error") == Null("Error")
+  ```
+
+- **from_fn, as_option**: Methods to handle optional values.
+
+## Error Handling
+
+- **ResultError**: Base class for result-related errors.
+- **UnwrapFailedError**: Raised when an unwrap operation fails.
+- **OptionError**: Base class for option-related errors.
+- **TransposeError**: Raised when a transpose operation fails.
 
 ## Project Structure
 
@@ -30,76 +92,3 @@ This library provides a robust mechanism for handling operations that can result
         ├── test_pattern_matching.py
         └── test_result.py
 ```
-
-- **result/**: Contains the implementation of the `Result`, `Ok`, and `Err` classes along with error handling utilities.
-- **tests/**: Houses unit tests to ensure the reliability of the library's functionality.
-
-## Installation
-
-This project uses [Poetry](https://python-poetry.org/) for dependency management and packaging. To install the dependencies, run:
-
-```bash
-poetry install
-```
-
-## Running Tests
-
-To run all unit tests and verify that everything is working as expected, use the following command:
-
-```bash
-poetry run pytest
-```
-
-## Usage
-
-Here's a quick example of how to use the `Result` type in your code:
-
-```python
-from result import Err, Ok, Result
-
-
-def divide(a: int, b: int) -> Result[float, str]:
-    if b == 0:
-        return Err("Division by zero")
-    return Ok(a / b)
-
-
-def add(a: int, b: int) -> Result[int, str]:
-    if not isinstance((a, b), int):
-        return Result.from_failure("Invalid type.")
-    return Result.from_value(a + b)
-
-
-@Result.decorator
-def substract(a: int, b: int) -> int:
-    return a - b
-
-
-division = divide(10, 2)
-addition = add(10, 2)
-subtraction: Result[int, Exception] = substract(10, 2)
-
-if division.is_ok():
-    print(division.ok())
-else:
-    print(division.err())
-
-if addition.is_ok():
-    print(addition.ok())
-else:
-    print(addition.err())
-
-if subtraction.is_ok():
-    print(subtraction.ok())
-else:
-    print(subtraction.err())
-
-```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a pull request or open an issue if you have suggestions or encounter any problems.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.

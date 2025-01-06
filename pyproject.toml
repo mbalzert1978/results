@@ -1,11 +1,14 @@
 [project]
 name = "results"
 version = "0.1.0"
-description = "Add your description here"
+description = """
+This library provides a robust mechanism for handling operations that can
+result in success (Ok) or failure (Err). Inspired by Rust's Result type, it
+aims to facilitate error handling in a more functional programming style in
+Python.
+"""
 readme = "README.md"
-authors = [
-    { name = "Markus Iorio", email = "mbalzert@gmail.com" }
-]
+authors = [{ name = "Markus Iorio", email = "mbalzert@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = []
 
@@ -14,8 +17,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = [
-    "mypy>=1.14.1",
-    "pytest>=8.3.4",
-    "ruff>=0.8.6",
-]
+dev = ["mypy>=1.14.1", "pytest-cov>=6.0.0", "pytest>=8.3.4", "ruff>=0.8.6"]

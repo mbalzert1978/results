@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from results import Null, Some
+from results import Null, Option, Some
 
 
 def test_pattern_matching_on_ok_type() -> None:
     o = Some("yay")
     match o:
-        case Some(value):
+        case Option(value):
             reached = True
 
     assert value == "yay"
@@ -14,10 +14,9 @@ def test_pattern_matching_on_ok_type() -> None:
 
 
 def test_pattern_matching_on_err_type() -> None:
-    n = Null("nay")
+    n = Null()
     match n:
-        case Null(value):
+        case Option(None):
             reached = True
 
-    assert value == "nay"
     assert reached

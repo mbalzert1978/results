@@ -56,6 +56,21 @@ def test_is_ok(result, expected):
 
 
 @pytest.mark.parametrize(
+    "result, expected",
+    [
+        (Ok(10), False),
+        (Err("Something went wrong"), True),
+    ],
+    ids=[
+        "is_err when Ok value should return True",
+        "is_err when Err value should return False",
+    ],
+)
+def test_is_err(result, expected):
+    assert result.is_err() == expected
+
+
+@pytest.mark.parametrize(
     "result, predicate, expected",
     [
         (Ok(2), lambda x: x > 1, True),
@@ -93,7 +108,7 @@ def test_is_err_and(result, predicate, expected):
     "result, expected",
     [
         (Ok(2), Some(2)),
-        (Err("Nothing here"), Null(None)),
+        (Err("Nothing here"), Null()),
     ],
     ids=[
         "ok when Ok value should return value",
@@ -107,8 +122,8 @@ def test_ok(result, expected):
 @pytest.mark.parametrize(
     "result, expected",
     [
-        (Ok(2), None),
-        (Err("Nothing here"), "Nothing here"),
+        (Ok(2), Null()),
+        (Err("Nothing here"), Some("Nothing here")),
     ],
     ids=[
         "err when Ok value should return None",
