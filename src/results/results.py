@@ -328,38 +328,21 @@ class TransposeError(OptionError):
     """Transpose failed error."""
 
 
-def Some[T](value: T) -> Option[T]:
+class Option[T](abc.ABC):
     """
-    Creates an `Option` instance that contains `Some` value.
-
-    Examples:
-    >>> assert Option.some(10) == Some(10)
+    `Option` is a sealed two-state type: a value is either present ([`Some`]) or
+    absent ([`Null`]). Absence is encoded in the *type* (a separate [`Null`]
+    variant), never in a stored sentinel value, so `Some(None)` is a legal,
+    present state distinct from `Null()`. Behavior is selected by polymorphic
+    dispatch on the two `@final` variants; the base class is abstract and cannot
+    be instantiated directly.
     """
-    return Option[T].some(value)
-
-
-def Null[T]() -> Option[T]:
-    """
-    Creates an `Option` instance that contains a `Null` value.
-
-    Examples:
-    >>> assert Option.null("Error") == Null("Error")
-    """
-    return Option[T].none()
-
-
-class Option[T: object]:
-    __slots__ = ("_content",)
-    __match_args__ = ("_content",)
-
-    def __init__(self, content: T | None = None) -> None:
-        self._content = content
 
     @staticmethod
     def from_fn[**P](
         fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs
     ) -> Option[T]:
-        """Turns a function so that it returns a `Option<T, N>` instead of `T | None`.
+        """Turns a function so that it returns a `Option<T>` instead of `T | None`.
 
         Caller is responsible for ensuring that the function does not raise an exception.
         # Examples:
@@ -388,27 +371,9 @@ class Option[T: object]:
 
         @functools.wraps(fn)
         def inner(*args: P.args, **kwargs: P.kwargs) -> Option[T]:
-            return Null() if (option := fn(*args, **kwargs)) is None else Some(option)
+            return Option.from_fn(fn, *args, **kwargs)
 
         return inner
-
-    def __str__(self):
-        return f"{self._content}"
-
-    def __repr__(self) -> str:
-        return f"Some({self._content!r})" if self._content is not None else "Null()"
-
-    def __hash__(self) -> int:
-        return hash(self._content) * 41
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, type(self)) and self._content == other._content
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
-    def __iter__(self) -> Iterator[T | None]:
-        yield self._content or None
 
     @classmethod
     def some(cls, content: T) -> Option[T]:
@@ -418,7 +383,7 @@ class Option[T: object]:
         Examples:
         >>> assert Option.some(10) == Some(10)
         """
-        return cls(content)
+        return Some(content)
 
     @classmethod
     def none(cls) -> Option[T]:
@@ -426,40 +391,38 @@ class Option[T: object]:
         Creates an `Option` instance that contains a `Null` value.
 
         Examples:
-        >>> assert Option.null("Error") == Null("Error")
+        >>> assert Option.none() == Null()
         """
-        return cls()
+        return Null()
 
+    @abc.abstractmethod
     def and_then[U](self, op: Callable[[T], Option[U]]) -> Option[U]:
         """Returns [`Null`] if the option is [`Null`], otherwise calls `op` with the
         wrapped value and returns the result.
         Some languages call this operation flatmap.
         # Examples:
 
-        >>> err = "Not a number"
         >>> assert Some(2).and_then(sq_then_to_string) == Some("4")
-        >>> assert Null(err).and_then(sq_then_to_string) == Null(err)
+        >>> assert Null().and_then(sq_then_to_string) == Null()
         """
-        return op(self._content) if self._content is not None else self
 
+    @abc.abstractmethod
     def expect(self, msg: str) -> T:
         """
         Returns the contained [`Some`] value, consuming the `self` value.
 
         Raises
         ---
-            Panics if the value is a [`Null`] with a custom panic message provided by `msg`.
+            Raises `UnwrapFailedError` with the provided message if the value is a [`Null`].
         # Examples:
 
         >>> msg = "Something went wrong"
         >>> assert Some(10).expect(msg) == 10
         >>> with pytest.raises(UnwrapFailedError, match=msg):
-        ...     Null("Emergency failure").expect(msg)
+        ...     Null().expect(msg)
         """
-        if self._content is None:
-            raise UnwrapFailedError(msg)
-        return self._content
 
+    @abc.abstractmethod
     def filter(self, predicate: Callable[[T], bool]) -> Option[T]:
         """
         Returns [`Null`] if the option is [`Null`], otherwise calls `predicate`
@@ -475,22 +438,22 @@ class Option[T: object]:
         # Examples:
 
         >>> assert Some(10).filter(is_even) == Some(10)
-        >>> assert Some(15).filter(is_even) == Null(None)
-        >>> assert Null(10).filter(is_even) == Null(10)
+        >>> assert Some(15).filter(is_even) == Null()
+        >>> assert Null().filter(is_even) == Null()
         """
-        return self if self._content is None or predicate(self._content) else Null()
 
+    @abc.abstractmethod
     def is_some(self) -> bool:
         """
         Returns `true` if the option is a [`Some`] value.
 
         # Examples:
 
-        >>> assert not Null(10).is_some()
+        >>> assert not Null().is_some()
         >>> assert Some(10).is_some()
         """
-        return self._content is not None
 
+    @abc.abstractmethod
     def is_some_and(self, op: Callable[[T], bool]) -> bool:
         """
         Returns `true` if the option is a [`Some`] and the value inside of it matches a predicate.
@@ -499,21 +462,21 @@ class Option[T: object]:
 
         >>> assert Some(10).is_some_and(is_even)
         >>> assert not Some(15).is_some_and(is_even)
-        >>> assert not Null("Something went wrong").is_some_and(is_even)
+        >>> assert not Null().is_some_and(is_even)
         """
-        return self.is_some() and op(self._content)
 
+    @abc.abstractmethod
     def is_none(self) -> bool:
         """
         Returns `true` if the option is a [`Null`] value.
 
         # Examples:
 
-        >>> assert Null(10).is_null()
-        >>> assert not Some(10).is_null()
+        >>> assert Null().is_none()
+        >>> assert not Some(10).is_none()
         """
-        return not self.is_some()
 
+    @abc.abstractmethod
     def map[U](self, op: Callable[[T], U]) -> Option[U]:
         """
         Maps an `Option<T>` to `Option<U>` by applying a function to a contained value
@@ -522,10 +485,10 @@ class Option[T: object]:
         # Examples:
 
         >>> assert Some(10).map(lambda i: i * 2) == Some(20)
-        >>> assert Null("Nothing here").map(lambda i: i * 2) == Null("Nothing here")
+        >>> assert Null().map(lambda i: i * 2) == Null()
         """
-        return self if self._content is None else Some(op(self._content))
 
+    @abc.abstractmethod
     def map_or[U](self, default: U, op: Callable[[T], U]) -> U:
         """
         Returns the provided default result (if `Null`), or applies a function to the contained value (if `Some`).
@@ -533,10 +496,10 @@ class Option[T: object]:
         # Examples:
 
         >>> assert Some("foo").map_or(42, lambda v: len(v)) == 3
-        >>> assert Null("bar").map_or(42, lambda v: len(v)) == 42
+        >>> assert Null().map_or(42, lambda v: len(v)) == 42
         """
-        return default if self._content is None else op(self._content)
 
+    @abc.abstractmethod
     def map_or_else[U](self, default: Callable[[], U], op: Callable[[T], U]) -> U:
         """
         Computes a default function result (if `Null`), or
@@ -545,23 +508,21 @@ class Option[T: object]:
         # Examples:
 
         >>> assert Some("foo").map_or_else(lambda: 42, lambda v: len(v)) == 3
-        >>> assert Null("bar").map_or_else(lambda: 42, lambda v: len(v)) == 42
+        >>> assert Null().map_or_else(lambda: 42, lambda v: len(v)) == 42
         """
-        return default() if self._content is None else op(self._content)
 
+    @abc.abstractmethod
     def or_(self, default: Option[T]) -> Option[T]:
         """
-        Transforms the `Option<T>` into a [`Result<T, E>`], mapping [`Some(v)`] to
-        [`Ok(v)`] and [`Null`] to [`Err(err())`].
+        Returns the option if it contains a value, otherwise returns `default`.
 
         # Examples:
 
-        >>> msg = "Something went wrong"
-        >>> assert Some(10).ok_or_else(lambda: msg) == Result.Ok(10)
-        >>> assert Null(10).ok_or_else(lambda: msg) == Result.Err(msg)
+        >>> assert Some(2).or_(Null()) == Some(2)
+        >>> assert Null().or_(Some(100)) == Some(100)
         """
-        return default if self._content is None else self
 
+    @abc.abstractmethod
     def or_else(self, op: Callable[[], Option[T]]) -> Option[T]:
         """
         Returns the option if it contains a value, otherwise calls `f` and
@@ -570,11 +531,11 @@ class Option[T: object]:
         # Examples
 
         >>> assert Some(10).or_else(lambda: Some(20)) == Some(10)
-        >>> assert Some(10).or_else(lambda: Null(20)) == Some(10)
-        >>> assert Null(10).or_else(lambda: Some(20)) == Some(20)
+        >>> assert Some(10).or_else(lambda: Null()) == Some(10)
+        >>> assert Null().or_else(lambda: Some(20)) == Some(20)
         """
-        return op() if self._content is None else self
 
+    @abc.abstractmethod
     def ok_or[E](self, err: E) -> Result[T, E]:
         """
         Transforms the `Option<T>` into a [`Result<T, E>`], mapping [`Some(v)`] to
@@ -584,10 +545,10 @@ class Option[T: object]:
 
         >>> msg = "Something went wrong"
         >>> assert Some(10).ok_or(msg) == Result.Ok(10)
-        >>> assert Null(10).ok_or(msg) == Result.Err(msg)
+        >>> assert Null().ok_or(msg) == Result.Err(msg)
         """
-        return Ok(self._content) if self._content is not None else Err(err)
 
+    @abc.abstractmethod
     def ok_or_else[E](self, op: Callable[[], E]) -> Result[T, E]:
         """
         Transforms the `Option<T>` into a [`Result<T, E>`], mapping [`Some(v)`] to
@@ -597,10 +558,10 @@ class Option[T: object]:
 
         >>> msg = "Something went wrong"
         >>> assert Some(10).ok_or_else(lambda: msg) == Result.Ok(10)
-        >>> assert Null(10).ok_or_else(lambda: msg) == Result.Err(msg)
+        >>> assert Null().ok_or_else(lambda: msg) == Result.Err(msg)
         """
-        return Ok(self._content) if self._content is not None else Err(op())
 
+    @abc.abstractmethod
     def transpose[E](self) -> Result[Option[T], E]:
         """
         Transposes an `Option` of a [`Result`] into a [`Result`] of an `Option`.
@@ -616,14 +577,119 @@ class Option[T: object]:
         >>> no_result = "No result"
         >>> assert Some(Result.Ok("foo")).transpose() == Result.Ok(Some("foo"))
         >>> assert Some(Result.Err(msg)).transpose() == Result.Err(msg)
-        >>> assert Null(Result.Ok("foo")).transpose() == Result.Ok(Some(None))
-        >>> assert Null(Result.Err(msg)).transpose() == Result.Ok(Some(None))
+        >>> assert Null().transpose() == Result.Ok(Null())
         >>> assert Some(no_result).transpose() == Result.Ok(Some(no_result))
-        >>> assert Null(no_result).transpose() == Result.Ok(Some(None))
         """
-        match self._content:
-            case None:
-                return Ok(Null())
+
+    @abc.abstractmethod
+    def unwrap(self) -> T:
+        """
+        Returns the contained [`Some`] value.
+
+        Because this function may panic, its use is generally discouraged.
+        Instead, prefer to use pattern matching and handle the [`Null`]
+        case explicitly, or call [`unwrap_or`], [`unwrap_or_else`].
+
+        # Raises
+            Raises UnwrapFailedError when the option is [`Null`].
+
+        # Examples
+
+        >>> assert Some(10).unwrap() == 10
+        >>> Null().unwrap()
+        Traceback (most recent call last):
+            ...
+            results.results.UnwrapFailedError: Called `.unwrap` on an [`Null`] value.
+
+        """
+
+    @abc.abstractmethod
+    def unwrap_or(self, default: T) -> T:
+        """
+        Returns the contained [`Some`] value or a provided default.
+
+        # Examples
+
+        >>> assert Some(10).unwrap_or(42) == 10
+        >>> assert Null().unwrap_or(42) == 42
+        """
+
+    @abc.abstractmethod
+    def unwrap_or_else(self, op: Callable[[], T]) -> T:
+        """
+        Returns the contained [`Some`] value or computes it from a closure.
+
+        # Examples
+
+        >>> assert Some(10).unwrap_or_else(lambda: 42) == 10
+        >>> assert Null().unwrap_or_else(lambda: 42) == 42
+        """
+
+
+@final
+class Some[T](Option[T]):
+    __slots__ = ("_value",)
+    __match_args__ = ("_value",)
+
+    def __init__(self, value: T) -> None:
+        self._value = value
+
+    def __str__(self) -> str:
+        return f"{self._value}"
+
+    def __repr__(self) -> str:
+        return f"Some({self._value!r})"
+
+    def __hash__(self) -> int:
+        return hash(self._value) * 41
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Some) and self._value == other._value
+
+    def __iter__(self) -> Iterator[T]:
+        yield self._value
+
+    def and_then[U](self, op: Callable[[T], Option[U]]) -> Option[U]:
+        return op(self._value)
+
+    def expect(self, msg: str) -> T:
+        return self._value
+
+    def filter(self, predicate: Callable[[T], bool]) -> Option[T]:
+        return self if predicate(self._value) else Null()
+
+    def is_some(self) -> Literal[True]:
+        return True
+
+    def is_some_and(self, op: Callable[[T], bool]) -> bool:
+        return op(self._value)
+
+    def is_none(self) -> Literal[False]:
+        return False
+
+    def map[U](self, op: Callable[[T], U]) -> Option[U]:
+        return Some(op(self._value))
+
+    def map_or[U](self, default: U, op: Callable[[T], U]) -> U:
+        return op(self._value)
+
+    def map_or_else[U](self, default: Callable[[], U], op: Callable[[T], U]) -> U:
+        return op(self._value)
+
+    def or_(self, default: Option[T]) -> Option[T]:
+        return self
+
+    def or_else(self, op: Callable[[], Option[T]]) -> Option[T]:
+        return self
+
+    def ok_or[E](self, err: E) -> Result[T, E]:
+        return Ok(self._value)
+
+    def ok_or_else[E](self, op: Callable[[], E]) -> Result[T, E]:
+        return Ok(self._value)
+
+    def transpose[E](self) -> Result[Option[T], E]:
+        match self._value:
             case Ok(value):
                 return Ok(Some(value))
             case Err() as err:
@@ -632,48 +698,82 @@ class Option[T: object]:
                 return Ok(self)
 
     def unwrap(self) -> T:
-        """
-        Returns the contained [`Some`] value.
-
-        Because this function may panic, its use is generally discouraged.
-        Instead, prefer to use pattern matching and handle the [`Null`]
-        case explicitly, or call [`unwrap_or`], [`unwrap_or_else`], or
-        [`unwrap_or_default`].
-
-        # Raises
-            Raises UnwrapFailedError when the value equals None.
-
-        # Examples
-
-        >>> assert Some(10).unwrap() == 10
-        >>> assert Null(10).unwrap() == 10
-        Traceback (most recent call last):
-            ...
-            option.option.UnwrapFailedError: Called `.unwrap` on an [`Null`] value.
-
-        """
-        if self._content is None:
-            raise UnwrapFailedError("Called `.unwrap` on an [`Null`] value.")
-        return self._content
+        return self._value
 
     def unwrap_or(self, default: T) -> T:
-        """
-        Returns the contained [`Some`] value or a provided default.
-
-        # Examples
-
-        >>> assert Some(10).unwrap_or(42) == 10
-        >>> assert Null(10).unwrap_or(42) == 42
-        """
-        return self._content or default
+        return self._value
 
     def unwrap_or_else(self, op: Callable[[], T]) -> T:
-        """
-        Returns the contained [`Some`] value or computes it from a closure.
+        return self._value
 
-        # Examples
 
-        >>> assert Some(10).unwrap_or_else(lambda: 42) == 10
-        >>> assert Null(10).unwrap_or_else(lambda: 42) == 42
-        """
-        return self._content or op()
+@final
+class Null[T](Option[T]):
+    __slots__ = ()
+    __match_args__ = ()
+
+    def __str__(self) -> str:
+        return f"{None}"
+
+    def __repr__(self) -> str:
+        return "Null()"
+
+    def __hash__(self) -> int:
+        return hash(None) * 41
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Null)
+
+    def __iter__(self) -> Iterator[None]:
+        yield None
+
+    def and_then[U](self, op: Callable[[T], Option[U]]) -> Option[U]:
+        return Null()
+
+    def expect(self, msg: str) -> NoReturn:
+        raise UnwrapFailedError(msg)
+
+    def filter(self, predicate: Callable[[T], bool]) -> Option[T]:
+        return self
+
+    def is_some(self) -> Literal[False]:
+        return False
+
+    def is_some_and(self, op: Callable[[T], bool]) -> Literal[False]:
+        return False
+
+    def is_none(self) -> Literal[True]:
+        return True
+
+    def map[U](self, op: Callable[[T], U]) -> Option[U]:
+        return Null()
+
+    def map_or[U](self, default: U, op: Callable[[T], U]) -> U:
+        return default
+
+    def map_or_else[U](self, default: Callable[[], U], op: Callable[[T], U]) -> U:
+        return default()
+
+    def or_(self, default: Option[T]) -> Option[T]:
+        return default
+
+    def or_else(self, op: Callable[[], Option[T]]) -> Option[T]:
+        return op()
+
+    def ok_or[E](self, err: E) -> Result[T, E]:
+        return Err(err)
+
+    def ok_or_else[E](self, op: Callable[[], E]) -> Result[T, E]:
+        return Err(op())
+
+    def transpose[E](self) -> Result[Option[T], E]:
+        return Ok(Null())
+
+    def unwrap(self) -> NoReturn:
+        raise UnwrapFailedError("Called `.unwrap` on an [`Null`] value.")
+
+    def unwrap_or(self, default: T) -> T:
+        return default
+
+    def unwrap_or_else(self, op: Callable[[], T]) -> T:
+        return op()
