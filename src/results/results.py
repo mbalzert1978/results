@@ -97,6 +97,28 @@ class Result[T, E](abc.ABC):
         """
 
     @abc.abstractmethod
+    def flatten[U](self: Result[Result[U, E], E]) -> Result[U, E]:
+        """Collapses one level of `Result` nesting.
+
+        Mappings:
+
+        - `Ok(Ok(v))`  → `Ok(v)`
+        - `Ok(Err(e))` → `Err(e)`
+        - `Err(e)`     → `Err(e)`
+
+        This is the named form of `and_then(lambda x: x)` (identity flatmap) and
+        the `Result` mirror of [`Option.flatten`]. `Ok.flatten` returns the
+        stored inner `Result` unchanged — an identity operation
+        (`Ok(inner).flatten() is inner`), never re-wraps.
+
+        # Examples:
+
+        >>> assert Ok(Ok(5)).flatten() == Ok(5)
+        >>> assert Ok(Err("e")).flatten() == Err("e")
+        >>> assert Err("e").flatten() == Err("e")
+        """
+
+    @abc.abstractmethod
     def is_err(self) -> bool:
         """Returns `True` if the result is an [`Err`] value."""
 
@@ -234,6 +256,11 @@ class Ok[T](Result[T, Any]):
     def expect_err(self, msg: str) -> NoReturn:
         raise UnwrapFailedError(msg)
 
+    def flatten[U, E](self: Ok[Result[U, E]]) -> Result[U, E]:
+        # ponytail: self._value is already a Result[U, E] — return it
+        # directly. No re-wrap, O(1). Identity: Ok(inner).flatten() is inner.
+        return self._value
+
     def is_err(self) -> Literal[False]:
         return False
 
@@ -338,6 +365,10 @@ class Err[E](Result[Any, E]):
 
     def expect_err(self, msg: str) -> E:
         return self._value
+
+    def flatten[U](self) -> Result[U, E]:
+        # ponytail: Err propagates unchanged — same shape as Err.map.
+        return self
 
     def is_err(self) -> Literal[True]:
         return True

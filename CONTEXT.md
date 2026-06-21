@@ -345,6 +345,18 @@ Beide Implementierungen sind polymorphisch (`@abc.abstractmethod` auf `Option`,
 je eine Implementierung auf `Some` und `Null`); kein `isinstance`-, `is None`-
 oder Truthiness-Check im Körper.
 
+**`Result.flatten`** spiegelt das auf die `Result`-Seite — kollabiert
+`Result[Result[T, E], E]` zu `Result[T, E]`:
+
+- `Ok(Ok(v))`  → `Ok(v)`
+- `Ok(Err(e))` → `Err(e)`
+- `Err(e)`     → `Err(e)`
+
+`Ok.flatten` gibt das innere `Result` direkt zurück (Identität:
+`Ok(inner).flatten() is inner`); `Err.flatten` reicht sich selbst durch (`return
+self`), wie `Err.map`. Keine `None`-Behandlung — `Result` erlaubt `None` als
+Wert; das `Some(None)`-Risiko der `Option`-Seite existiert hier nicht.
+
 *Avoid:* `flatten` mit `map` oder `and_then` verwechseln. `map(f)` transformiert
 den Inhalt und verpackt ihn neu; `and_then(f)` wendet eine Funktion an, die
 selbst ein `Option` zurückgibt. `flatten` nimmt keine Funktion — es setzt nur
