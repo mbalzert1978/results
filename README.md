@@ -15,12 +15,14 @@ This library provides a robust mechanism for handling operations that can result
 ### Result
 
 - **and_then**: Chains operations on `Ok` values.
+
   ```python
   >>> assert Result.Ok(2).and_then(sq_then_to_string) == Ok("4")
   >>> assert Result.Err("Not a number").and_then(sq_then_to_string) == Err("Not a number")
   ```
 
 - **as_result**: Decorator to convert function return values to `Result`.
+
   ```python
   >>> @Result.as_result
   >>> def div(a: int, b: int) -> float:
@@ -52,11 +54,13 @@ This library provides a robust mechanism for handling operations that can result
 ### Option
 
 - **Some**: Represents an optional value.
+
   ```python
   >>> assert Option.some(10) == Some(10)
   ```
 
 - **Null**: Represents the absence of a value.
+
   ```python
   >>> assert Option.null("Error") == Null("Error")
   ```
@@ -72,7 +76,7 @@ This library provides a robust mechanism for handling operations that can result
 
 ## Project Structure
 
-```
+```text
 ├── .python-version
 ├── pyproject.toml
 ├── README.md
