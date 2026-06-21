@@ -13,11 +13,11 @@ Repo baseline at planning time: 215 tests pass, coverage 99%, `mypy` clean,
 
 | Plan | Title | Priority | Effort | Risk | Depends on | Status |
 | ----- | ------- | ---------- | -------- | ------ | ------------ | -------- |
-| 001 | `is_some`/`is_some_and` on the `Option` ABC (typing bug) | P1 | S | LOW | — | TODO |
-| 002 | Add GitHub Actions CI (ruff, mypy, pytest) | P1 | S | LOW | — | TODO |
-| 003 | Rename `_inner_value` → `_value` (family symmetry) | P2 | S | LOW | — | TODO |
-| 004 | Remove `Option.some`/`none` pass-throughs (breaking) | P2 | S | MED | — | TODO |
-| 005 | Add `Result.flatten` (parity with `Option.flatten`) | P3 | S | LOW | — | TODO |
+| 001 | `is_some`/`is_some_and` on the `Option` ABC (typing bug) | P1 | S | LOW | — | DONE (#37) |
+| 002 | Add GitHub Actions CI (ruff, mypy, pytest) | P1 | S | LOW | — | DONE (#36) |
+| 003 | Rename `_inner_value` → `_value` (family symmetry) | P2 | S | LOW | — | DONE (#35) |
+| 004 | Remove `Option.some`/`none` pass-throughs (breaking) | P2 | S | MED | — | DONE (#38) |
+| 005 | Add `Result.flatten` (parity with `Option.flatten`) | P3 | S | LOW | — | DONE (#39) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale).
 
