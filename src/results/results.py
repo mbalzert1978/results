@@ -154,6 +154,19 @@ class Result[T, E](abc.ABC):
         """Returns the result if it is [`Ok`], otherwise calls `op` with the wrapped error and returns the result."""
 
     @abc.abstractmethod
+    def transpose[U](self) -> Option[Result[U, E]]:
+        """Transposes a `Result` of an `Option` into an `Option` of a `Result`.
+
+        - `Ok(Some(v))` → `Some(Ok(v))`
+        - `Ok(Null())` → `Null()`
+        - `Err(e)` → `Some(Err(e))`
+        - `Ok(non-Option value)` → `Some(self)` (lenient fallback)
+
+        This is the mirror image of [`Option.transpose`], and the two are inverses:
+        `Some(Ok(v)).transpose().transpose() == Some(Ok(v))`.
+        """
+
+    @abc.abstractmethod
     def unwrap(self) -> T:
         """Returns the contained [`Ok`] value, consuming the `self` value.
         Raises an `UnwrapFailedError` if the value is an [`Err`].
@@ -255,6 +268,17 @@ class Ok[T](Result[T, Any]):
     def or_else[E](self, op: Callable[[E], Result[T, E]]) -> Result[T, E]:
         return Ok(self._inner_value)
 
+    def transpose[U, E](self) -> Option[Result[U, E]]:
+        match self._inner_value:
+            case Some(value):
+                return Some(Ok(value))
+            case Null():
+                return Null()
+            case _:
+                return Some(
+                    cast(Result[U, E], self)
+                )  # ponytail: lenient fallback — non-Option payload
+
     def unwrap(self) -> T:
         return self._inner_value
 
@@ -349,6 +373,9 @@ class Err[E](Result[Any, E]):
 
     def or_else[T](self, op: Callable[[E], Result[T, E]]) -> Result[T, E]:
         return op(self._inner_value)
+
+    def transpose[T, U](self) -> Option[Result[U, E]]:
+        return Some(self)
 
     def unwrap(self) -> NoReturn:
         exc = UnwrapFailedError(

@@ -323,13 +323,27 @@ Zielfamilie; das Original wird nicht verändert.
 
 ### transpose
 
-`Option.transpose()` vertauscht die Schachtelung eines `Option` **eines** `Result`
-in ein `Result` **eines** `Option`:
+Die beiden `transpose`-Methoden bilden ein **inverses Paar** — sie tauschen die
+Schachtelungs-Ebenen in entgegengesetzter Richtung und heben sich gegenseitig auf.
+
+**`Option.transpose()`** — `Option[Result[T, E]]` → `Result[Option[T], E]`:
 
 - `Null()` → `Ok(Null())`
 - `Some(Ok(v))` → `Ok(Some(v))` (ist `v` `None`, wirft `Some(v)` → `ValueError`)
 - `Some(Err(e))` → `Err(e)`
 - nicht-`Result`-Inhalt → `Ok(self)` (unverändert eingepackt)
+
+**`Result.transpose()`** — `Result[Option[T], E]` → `Option[Result[T, E]]`:
+
+- `Ok(Some(v))` → `Some(Ok(v))`
+- `Ok(Null())` → `Null()`
+- `Err(e)` → `Some(Err(e))`
+- `Ok(Nicht-Option-Wert)` → `Some(self)` (toleranter Fallback)
+
+Die Umkehr-Eigenschaft gilt für die drei Hauptfälle:
+`Some(Ok(v)).transpose().transpose() == Some(Ok(v))`,
+`Some(Err(e)).transpose().transpose() == Some(Err(e))`,
+`Null().transpose().transpose() == Null()`.
 
 *Avoid:* an eine Matrix-Transposition denken — `transpose` wirft nie und meint
 ausschließlich das Tauschen der beiden Schachtelungs-Ebenen.
