@@ -21,6 +21,58 @@ def sq_then_to_string(x: int) -> str | None:
 
 
 @pytest.mark.parametrize(
+    "option, optb, expected",
+    [
+        (Some(1), Some(2), Some(2)),
+        (Some(1), Null(), Null()),
+        (Null(), Some(2), Null()),
+        (Null(), Null(), Null()),
+    ],
+    ids=[
+        "test_and_when_some_and_some_should_return_optb",
+        "test_and_when_some_and_null_should_return_null",
+        "test_and_when_null_and_some_should_return_null",
+        "test_and_when_null_and_null_should_return_null",
+    ],
+)
+def test_and_when_called_should_return_optb_if_some_else_null(
+    option: Option, optb: Option, expected: Option
+) -> None:
+    assert option.and_(optb) == expected
+
+
+def test_and_some_returns_same_optb_instance() -> None:
+    optb: Option = Some(99)
+    assert Some(1).and_(optb) is optb
+
+
+@pytest.mark.parametrize(
+    "option1, option2, expected",
+    [
+        (Some(1), Null(), Some(1)),
+        (Null(), Some(2), Some(2)),
+        (Some(1), Some(2), Null()),
+        (Null(), Null(), Null()),
+    ],
+    ids=[
+        "test_xor_when_some_and_null_should_return_self",
+        "test_xor_when_null_and_some_should_return_optb",
+        "test_xor_when_both_some_should_return_null",
+        "test_xor_when_both_null_should_return_null",
+    ],
+)
+def test_xor_when_called_should_return_some_iff_exactly_one_is_some(
+    option1: Option, option2: Option, expected: Option
+) -> None:
+    assert option1.xor(option2) == expected
+
+
+def test_xor_null_returns_same_optb_instance() -> None:
+    optb: Option = Some(42)
+    assert Null().xor(optb) is optb
+
+
+@pytest.mark.parametrize(
     "option, func, expected",
     [
         (Some(2), sq_then_to_string, Some("4")),

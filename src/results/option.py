@@ -81,6 +81,21 @@ class Option[T](abc.ABC):
         return Null()
 
     @abc.abstractmethod
+    def and_[U](self, optb: Option[U]) -> Option[U]:
+        """Returns [`Null`] if the option is [`Null`], otherwise returns `optb`.
+
+        This is the eager counterpart of [`and_then`]: the argument is evaluated
+        unconditionally. Use [`and_then`] when computing the next option is expensive.
+
+        # Examples:
+
+        >>> assert Some(1).and_(Some(2)) == Some(2)
+        >>> assert Some(1).and_(Null()) == Null()
+        >>> assert Null().and_(Some(2)) == Null()
+        >>> assert Null().and_(Null()) == Null()
+        """
+
+    @abc.abstractmethod
     def and_then[U](self, op: Callable[[T], Option[U]]) -> Option[U]:
         """Returns [`Null`] if the option is [`Null`], otherwise calls `op` with the
         wrapped value and returns the result.
@@ -316,6 +331,25 @@ class Option[T](abc.ABC):
         >>> assert Null().unwrap_or_else(lambda: 42) == 42
         """
 
+    @abc.abstractmethod
+    def xor(self, optb: Option[T]) -> Option[T]:
+        """Returns [`Some`] iff exactly one of `self` and `optb` is [`Some`].
+
+        Truth table::
+
+            Some(a).xor(Null())    == Some(a)
+            Null().xor(Some(b))    == Some(b)
+            Some(a).xor(Some(b))   == Null()
+            Null().xor(Null())     == Null()
+
+        # Examples:
+
+        >>> assert Some(1).xor(Null()) == Some(1)
+        >>> assert Null().xor(Some(2)) == Some(2)
+        >>> assert Some(1).xor(Some(2)) == Null()
+        >>> assert Null().xor(Null()) == Null()
+        """
+
 
 @final
 class Some[T](Option[T]):
@@ -344,6 +378,9 @@ class Some[T](Option[T]):
 
     def __iter__(self) -> Iterator[T]:
         yield self._value
+
+    def and_[U](self, optb: Option[U]) -> Option[U]:
+        return optb
 
     def and_then[U](self, op: Callable[[T], Option[U]]) -> Option[U]:
         return op(self._value)
@@ -419,6 +456,12 @@ class Some[T](Option[T]):
     def unwrap_or_else(self, op: Callable[[], T]) -> T:
         return self._value
 
+    def xor(self, optb: Option[T]) -> Option[T]:
+        # ponytail: xor's dependence on optb's variant is intrinsic and is resolved
+        # through optb's polymorphic dispatch, not a flag check — map_or returns
+        # `default` (self) when optb is Null and `op(v)` (Null()) when optb is Some.
+        return optb.map_or(self, lambda _: Null())
+
 
 @final
 class Null[T](Option[T]):
@@ -439,6 +482,9 @@ class Null[T](Option[T]):
 
     def __iter__(self) -> Iterator[None]:
         yield None
+
+    def and_[U](self, optb: Option[U]) -> Option[U]:
+        return Null()
 
     def and_then[U](self, op: Callable[[T], Option[U]]) -> Option[U]:
         return Null()
@@ -511,3 +557,6 @@ class Null[T](Option[T]):
 
     def unwrap_or_else(self, op: Callable[[], T]) -> T:
         return op()
+
+    def xor(self, optb: Option[T]) -> Option[T]:
+        return optb

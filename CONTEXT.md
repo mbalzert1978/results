@@ -142,6 +142,29 @@ je eine Implementierung auf `Some` und `Null`); kein `isinstance`- oder
 **neuen** Container zurück; `inspect` gibt `self` zurück und ist für reine
 Nebeneffekte gedacht.
 
+### and_ / xor
+
+Zwei `Option`-Methoden für **kombinatorische** Verknüpfung zweier Options:
+
+- `and_(optb)` — gibt `Null()` zurück, wenn `self` `Null` ist; andernfalls `optb`
+  (die andere Option unverändert). Das ist das **eager** Gegenstück zu `and_then`:
+  `optb` wird immer ausgewertet, unabhängig davon, ob `self` `Some` oder `Null` ist.
+  Verwende `and_then` (`T -> Option[U]`), wenn die Berechnung des nächsten Options
+  aufwändig ist oder den Wert von `self` benötigt.
+- `xor(optb)` — gibt `Some` zurück, wenn **genau eine** der beiden Options `Some`
+  ist; sonst `Null()`. Wahrheitstabelle: `Some.xor(Null) = Some(self)`,
+  `Null.xor(Some) = Some(optb)`, `Some.xor(Some) = Null()`, `Null.xor(Null) = Null()`.
+
+Beide Methoden sind polymorphisch implementiert (`@abc.abstractmethod` auf `Option`,
+je eine Implementierung auf `Some` und `Null`); kein `isinstance`-, `is None`- oder
+Truthiness-Check im Körper. `xor`'s Abhängigkeit von der Variante des Arguments wird
+via `optb.map_or(self, lambda _: Null())` aufgelöst — die Dispatch-Entscheidung liegt
+im `map_or` des Arguments, nicht in einem Flag-Check auf `self`.
+
+*Avoid:* `and_` mit `and_then` verwechseln. `and_` nimmt eine fertige Option entgegen
+(eager); `and_then` nimmt eine Funktion `T -> Option[U]` (lazy, hat Zugriff auf den
+`Some`-Wert). Beide geben `Null()` zurück, wenn `self` `Null` ist.
+
 ### unwrap
 
 Oberbegriff für den **wert-entpackenden Zugriff** auf der „guten" Seite:
