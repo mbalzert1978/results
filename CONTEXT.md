@@ -29,8 +29,7 @@ Bewusst **nicht** Teil dieses Scopes:
   den Rändern eingefangen (siehe `as_result`/`from_fn`); innerhalb der Kette wird
   nicht geworfen, sondern ein `Err`/`Null` weitergereicht.
 - **Kein vollständiger Port der Rust-API.** Es existiert nur eine bewusst kleine
-  Methodenauswahl. Insbesondere gibt es **kein** `unwrap_or_default` und **kein**
-  `flatten`.
+  Methodenauswahl. Insbesondere gibt es **kein** `unwrap_or_default`.
 - **Keine Go-artigen `(value, error)`-Tupel.** Ein Ergebnis ist immer ein einzelnes
   Objekt eines der beiden Typ-Familien, nie ein Paar.
 
@@ -302,6 +301,37 @@ Verkettet eine Folgeoperation, die selbst wieder ein `Result`/`Option` liefert
 
 *Avoid:* `and_then` als „map" beschreiben. Der Unterschied ist genau die
 Verpackungs-Ebene des Rückgabewerts.
+
+### flatten
+
+Kollabiert **eine** Verschachtelungsebene eines `Option[Option[T]]` zu `Option[T]`.
+
+Abbildungsregeln:
+
+- `Some(Some(x))` → `Some(x)`
+- `Some(Null())`  → `Null()`
+- `Null()`        → `Null()`
+
+`flatten` ist die benannte Form von `and_then(lambda x: x)` (Identity-Flatmap):
+statt einen Wert zu transformieren, gibt es das innere `Option` direkt durch.
+
+**`Some.flatten` ist eine Identitätsoperation:** Die Implementierung gibt
+`self._value` direkt zurück — kein neuer Container entsteht, kein Wert wird
+neu eingepackt. Folge: `Some(inner).flatten() is inner` (Objektidentität).
+Da nichts eingepackt wird, entsteht kein neues `Some` und damit kein
+`Some(None)`-Risiko; der Guard in `Some.__init__` wird gar nicht erreicht.
+
+`Null.flatten` gibt ein frisches `Null()` zurück.
+
+Beide Implementierungen sind polymorphisch (`@abc.abstractmethod` auf `Option`,
+je eine Implementierung auf `Some` und `Null`); kein `isinstance`-, `is None`-
+oder Truthiness-Check im Körper.
+
+*Avoid:* `flatten` mit `map` oder `and_then` verwechseln. `map(f)` transformiert
+den Inhalt und verpackt ihn neu; `and_then(f)` wendet eine Funktion an, die
+selbst ein `Option` zurückgibt. `flatten` nimmt keine Funktion — es setzt nur
+voraus, dass der Inhalt bereits ein `Option` ist (`Option[Option[T]]`), und
+entfernt die äußere Hülle.
 
 ### Cross-Conversion
 

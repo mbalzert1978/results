@@ -143,6 +143,27 @@ class Option[T](abc.ABC):
         """
 
     @abc.abstractmethod
+    def flatten[U](self: Option[Option[U]]) -> Option[U]:
+        """Collapses one level of `Option` nesting.
+
+        Mappings:
+
+        - `Some(Some(x))` → `Some(x)`
+        - `Some(Null())`  → `Null()`
+        - `Null()`        → `Null()`
+
+        This is the named form of `and_then(lambda x: x)` (identity flatmap).
+        `Some.flatten` returns the stored inner `Option` unchanged — it is an
+        identity operation (`Some(inner).flatten() is inner`), never re-wraps.
+
+        # Examples:
+
+        >>> assert Some(Some(5)).flatten() == Some(5)
+        >>> assert Some(Null()).flatten() == Null()
+        >>> assert Null().flatten() == Null()
+        """
+
+    @abc.abstractmethod
     def inspect(self, fn: Callable[[T], object]) -> Option[T]:
         """
         Calls `fn` with the contained value if [`Some`], returns `self` unchanged.
@@ -429,6 +450,11 @@ class Some[T](Option[T]):
     def filter(self, predicate: Callable[[T], bool]) -> Option[T]:
         return self if predicate(self._value) else Null()
 
+    def flatten[U](self: Some[Option[U]]) -> Option[U]:
+        # ponytail: self._value is already an Option[U] — return it directly.
+        # No re-wrap, no None risk, O(1). Identity: Some(inner).flatten() is inner.
+        return self._value
+
     def inspect(self, fn: Callable[[T], object]) -> Option[T]:
         fn(self._value)
         return self
@@ -544,6 +570,9 @@ class Null[T](Option[T]):
 
     def filter(self, predicate: Callable[[T], bool]) -> Option[T]:
         return self
+
+    def flatten[U](self: Null[Option[U]]) -> Option[U]:
+        return Null()
 
     def inspect(self, fn: Callable[[T], object]) -> Option[T]:
         return self
