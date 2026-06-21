@@ -203,6 +203,19 @@ def test_is_none_or_when_null_returns_true_and_some_defers_to_predicate(
     assert option.is_none_or(predicate) == expected
 
 
+def test_is_some_and_is_some_and_callable_through_option_base() -> None:
+    # Regression for the typed interface: is_some / is_some_and must be
+    # reachable through an Option[T] reference (declared on the ABC), not only
+    # on the concrete Some / Null. This guards against them silently slipping
+    # off the base again — `uv run mypy src tests` is the real gate here.
+    present: Option[int] = Some(10)
+    absent: Option[int] = Null()
+    assert present.is_some()
+    assert not absent.is_some()
+    assert present.is_some_and(lambda v: v > 5)
+    assert not absent.is_some_and(lambda v: v > 5)
+
+
 def test_inspect_runs_fn_only_on_some_and_returns_self() -> None:
     calls: list[int] = []
     fn = lambda v: calls.append(v)  # noqa: E731

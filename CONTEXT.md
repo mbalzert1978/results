@@ -141,6 +141,24 @@ je eine Implementierung auf `Some` und `Null`); kein `isinstance`- oder
 **neuen** Container zurück; `inspect` gibt `self` zurück und ist für reine
 Nebeneffekte gedacht.
 
+### is_some / is_some_and
+
+Zwei `Option`-Methoden zum **Abfragen der Variante** auf der Vorhanden-Seite —
+das Spiegelbild von `is_ok` / `is_ok_and` auf `Result`:
+
+- `is_some()` — `True`, wenn die Option `Some` ist, sonst `False`.
+- `is_some_and(op)` — `True`, wenn die Option `Some(v)` ist **und** `op(v)`
+  wahr ergibt; bei `Null` immer `False` (das Prädikat wird nicht aufgerufen).
+  Komplement zu `is_none_or`.
+
+Beide sind `@abc.abstractmethod` auf `Option` und je einmal auf `Some` und
+`Null` implementiert (polymorpher Dispatch, kein `isinstance`/Flag-Check). Sie
+gehören zur abstrakten `Option`-Oberfläche — über eine `Option[T]`-Referenz
+typgeprüft aufrufbar.
+
+*Avoid:* annehmen, `is_some_and` werte `op` auch bei `Null` aus. Tut es nicht —
+`Null.is_some_and` gibt `False` zurück, ohne `op` zu berühren.
+
 ### and_ / xor
 
 Zwei `Option`-Methoden für **kombinatorische** Verknüpfung zweier Options:

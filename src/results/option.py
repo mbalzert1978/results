@@ -207,6 +207,30 @@ class Option[T](abc.ABC):
         """
 
     @abc.abstractmethod
+    def is_some(self) -> bool:
+        """
+        Returns `true` if the option is a [`Some`] value.
+
+        # Examples:
+
+        >>> assert Some(10).is_some()
+        >>> assert not Null().is_some()
+        """
+
+    @abc.abstractmethod
+    def is_some_and(self, op: Callable[[T], bool]) -> bool:
+        """
+        Returns `true` if the option is [`Some`] and the value inside matches
+        the predicate `op`. The complement of `is_none_or`.
+
+        # Examples:
+
+        >>> assert Some(10).is_some_and(is_even)
+        >>> assert not Some(15).is_some_and(is_even)
+        >>> assert not Null().is_some_and(is_even)
+        """
+
+    @abc.abstractmethod
     def map[U](self, op: Callable[[T], U]) -> Option[U]:
         """
         Maps an `Option<T>` to `Option<U>` by applying a function to a contained value
