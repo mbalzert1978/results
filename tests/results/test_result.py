@@ -93,11 +93,17 @@ def test_is_ok_and(result, predicate, expected):
         (Err(2), lambda x: x > 1, True),
         (Err(0), lambda x: x > 1, False),
         (Ok("Something went wrong"), lambda x: x > 1, False),
+        (Ok(42), lambda _: 1 / 0, False),
+        (Ok(0), lambda _: 1 / 0, False),
+        (Ok(""), lambda _: 1 / 0, False),
     ],
     ids=[
         "is_err_and when Err value matches predicate should return True",
         "is_err_and when Err value does not match predicate should return False",
         "is_err_and when Ok value should return False",
+        "is_err_and when Ok predicate must not be called (int value)",
+        "is_err_and when Ok predicate must not be called (falsy int)",
+        "is_err_and when Ok predicate must not be called (empty string)",
     ],
 )
 def test_is_err_and(result, predicate, expected):
