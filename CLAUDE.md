@@ -30,10 +30,10 @@ The entire library is one module, [src/results/results.py](src/results/results.p
 
 __`Result[T, E]`__ is an `abc.ABC` with two `@final` concrete subclasses, `Ok[T]` (declared `Result[T, Any]`) and `Err[E]` (declared `Result[Any, E]`). Every method is abstract on the base and implemented on both subclasses — behavior is selected by *polymorphism*, never by `isinstance`/flag checks inside a method. When adding a method to `Result`, add the `@abc.abstractmethod` stub plus an `Ok` and an `Err` implementation.
 
-__`Option[T]`__ is a *single concrete class* (not split into subclasses). It stores `_content: T | None` and uses `None` as the "null" sentinel. `Some(value)` and `Null()` are module-level factory functions delegating to the `Option.some()` / `Option.none()` classmethods. Consequences to keep in mind:
+__`Option[T]`__ mirrors `Result`'s design: an `abc.ABC` with two `@final` concrete subclasses, `Some[T]` (value present) and `Null[T]` (value absent). Absence is encoded in the *type* — there is no stored `None` sentinel — so behavior is selected by *polymorphism*, never by `_content is None` or truthiness checks inside a method. `Some(value)` and `Null()` are the only constructors (the base ABC is not directly instantiable). When adding a method to `Option`, add the `@abc.abstractmethod` stub plus a `Some` and a `Null` implementation. Consequences to keep in mind:
 
-- `Some(None)` is indistinguishable from `Null()`.
-- `unwrap_or` / `unwrap_or_else` test truthiness (`self._content or default`), so falsy values like `0` or `""` are treated like absence.
+- `Some(None) != Null()` — present-but-`None` is a distinct, legal state.
+- `unwrap_or` / `unwrap_or_else` / `__iter__` dispatch structurally on the variant, so falsy values like `0` / `""` / `[]` are treated as *present* (e.g. `Some(0).unwrap_or(42) == 0`).
 
 __Cross-conversions__ tie the two families together: `Result.ok()` / `Result.err()` produce an `Option`; `Option.ok_or()` / `Option.ok_or_else()` produce a `Result`; `Option.transpose()` swaps an `Option[Result]` into a `Result[Option]`.
 
@@ -41,7 +41,7 @@ __Constructors from callables__: `Result.as_result` (decorator) and `Result.from
 
 __Failure mode__: unwrap-style failures raise `UnwrapFailedError` (subclass of `ResultError`) — including `Option.expect`/`Option.unwrap`, which use this Result-side class. `Err.unwrap()` chains the original exception via `raise ... from` when the inner value is a `BaseException`.
 
-__Pattern matching__ relies on `__match_args__`: match `Ok`/`Err` on their inner value (`case Ok(v)`), and match `Option` on its content (`case Option(value)` / `case Option(None)`).
+__Pattern matching__ relies on `__match_args__`: match `Ok`/`Err` on their inner value (`case Ok(v)`), and match the `Option` variants directly (`case Some(v)` binds the value; `case Null()` matches the empty variant).
 
 The codebase uses PEP 695 generics throughout — `class Result[T, E]`, method-level `def map[U](...)`, and ParamSpec via `[**P]`. Preserve this style rather than reverting to `TypeVar`/`Generic`.
 
