@@ -416,10 +416,14 @@ def test_unwrap_or_else(result, func, expected):
 def test_as_result() -> None:
     @Result.as_result
     def div(a: int, b: int) -> float:
+        """Divide a by b."""
         return a / b
 
     assert div(10, 2) == Ok(5.0)
     assert div(10, 0).map_err(str) == Err("division by zero")
+    # functools.wraps metadata is preserved by the decorator.
+    assert div.__name__ == "div"
+    assert div.__doc__ == "Divide a by b."
 
 
 def test_from_fn() -> None:

@@ -40,14 +40,10 @@ class Result[T, E](abc.ABC):
         >>> assert div(10, 0).map_err(str) == Result.Err("division by zero")
         """
 
+        # ponytail: from_fn is the single source of the catch rule
         @functools.wraps(fn)
         def inner(*args: P.args, **kwargs: P.kwargs) -> Result[T, Exception]:
-            try:
-                result = fn(*args, **kwargs)
-            except Exception as exc:
-                return Err(exc)
-            else:
-                return Ok(result)
+            return Result.from_fn(fn, *args, **kwargs)
 
         return inner
 
