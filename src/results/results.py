@@ -296,7 +296,6 @@ class Err[E](Result[Any, E]):
             self.UNWRAP_ERROR_MESSAGE % ("unwrap", repr(self._inner_value)),
         )
         if isinstance(self._inner_value, BaseException):
-            exc.__cause__ = self._inner_value
             raise exc from self._inner_value
         raise exc
 
