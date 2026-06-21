@@ -632,3 +632,57 @@ def test_dead_option_error_hierarchy_is_no_longer_exported(removed_name):
 
     assert not hasattr(results, removed_name)
     assert removed_name not in results.__all__
+
+
+@pytest.mark.parametrize(
+    "option_a, option_b, expected",
+    [
+        (Some(1), Some("x"), Some((1, "x"))),
+        (Some(1), Null(), Null()),
+        (Null(), Some("x"), Null()),
+        (Null(), Null(), Null()),
+    ],
+    ids=[
+        "test_zip_when_both_some_should_return_some_tuple",
+        "test_zip_when_some_and_null_should_return_null",
+        "test_zip_when_null_and_some_should_return_null",
+        "test_zip_when_both_null_should_return_null",
+    ],
+)
+def test_zip_when_called_should_return_some_tuple_or_null(
+    option_a: Option, option_b: Option, expected: Option
+) -> None:
+    assert option_a.zip(option_b) == expected
+
+
+@pytest.mark.parametrize(
+    "option, expected",
+    [
+        (Some((1, "x")), (Some(1), Some("x"))),
+        (Null(), (Null(), Null())),
+    ],
+    ids=[
+        "test_unzip_when_some_tuple_should_return_pair_of_somes",
+        "test_unzip_when_null_should_return_pair_of_nulls",
+    ],
+)
+def test_unzip_when_called_should_split_option_tuple_into_pair(
+    option: Option, expected: tuple
+) -> None:
+    assert option.unzip() == expected
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        Some((None, 5)),
+        Some((5, None)),
+    ],
+    ids=[
+        "test_unzip_when_first_component_is_none_should_raise_value_error",
+        "test_unzip_when_second_component_is_none_should_raise_value_error",
+    ],
+)
+def test_unzip_when_component_is_none_should_raise_value_error(option: Option) -> None:
+    with pytest.raises(ValueError, match="Some.None. is forbidden"):
+        option.unzip()

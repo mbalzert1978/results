@@ -350,6 +350,44 @@ class Option[T](abc.ABC):
         >>> assert Null().xor(Null()) == Null()
         """
 
+    @abc.abstractmethod
+    def zip[U](self, other: Option[U]) -> Option[tuple[T, U]]:
+        """Zips `self` with another `Option`.
+
+        If `self` is `Some(a)` and `other` is `Some(b)`, returns `Some((a, b))`.
+        Otherwise returns `Null()`.
+
+        Truth table::
+
+            Some(a).zip(Some(b))   == Some((a, b))
+            Some(a).zip(Null())    == Null()
+            Null().zip(Some(b))    == Null()
+            Null().zip(Null())     == Null()
+
+        # Examples:
+
+        >>> assert Some(1).zip(Some("x")) == Some((1, "x"))
+        >>> assert Some(1).zip(Null()) == Null()
+        >>> assert Null().zip(Some("x")) == Null()
+        >>> assert Null().zip(Null()) == Null()
+        """
+
+    @abc.abstractmethod
+    def unzip[A, B](self: Option[tuple[A, B]]) -> tuple[Option[A], Option[B]]:
+        """Unzips an option containing a tuple of two values.
+
+        If `self` is `Some((a, b))`, returns `(Some(a), Some(b))`.
+        If `self` is `Null()`, returns `(Null(), Null())`.
+
+        Invariante: Ist eine Tupelkomponente `None`, wirft `Some(None)` beim
+        Konstruieren `ValueError` — der Guard in `Some.__init__` greift auch hier.
+
+        # Examples:
+
+        >>> assert Some((1, "x")).unzip() == (Some(1), Some("x"))
+        >>> assert Null().unzip() == (Null(), Null())
+        """
+
 
 @final
 class Some[T](Option[T]):
@@ -462,6 +500,15 @@ class Some[T](Option[T]):
         # `default` (self) when optb is Null and `op(v)` (Null()) when optb is Some.
         return optb.map_or(self, lambda _: Null())
 
+    def zip[U](self, other: Option[U]) -> Option[tuple[T, U]]:
+        # ponytail: whether `other` is Some or Null is resolved through other.map —
+        # no flag check or isinstance on self's variant; the dispatch lives in `other`.
+        return other.map(lambda b: (self._value, b))
+
+    def unzip[A, B](self: Some[tuple[A, B]]) -> tuple[Option[A], Option[B]]:
+        a, b = self._value
+        return (Some(a), Some(b))
+
 
 @final
 class Null[T](Option[T]):
@@ -560,3 +607,9 @@ class Null[T](Option[T]):
 
     def xor(self, optb: Option[T]) -> Option[T]:
         return optb
+
+    def zip[U](self, other: Option[U]) -> Option[tuple[T, U]]:
+        return Null()
+
+    def unzip[A, B](self: Null[tuple[A, B]]) -> tuple[Option[A], Option[B]]:
+        return (Null(), Null())
