@@ -45,6 +45,8 @@ __Pattern matching__ relies on `__match_args__`: match `Ok`/`Err` on their inner
 
 The codebase uses PEP 695 generics throughout — `class Result[T, E]`, method-level `def map[U](...)`, and ParamSpec via `[**P]`. Preserve this style rather than reverting to `TypeVar`/`Generic`.
 
+__Ubiquitous Language__: [CONTEXT.md](CONTEXT.md) is the authoritative glossary for the domain terms used here (`Result`/`Ok`/`Err`, `Option`/`Some`/`Null`, `unwrap`/`map`/`and_then`, the cross-conversions, the callable constructors, and the error hierarchy), including the deliberate "what it is NOT" boundaries. Consult it when a term is ambiguous or when writing user-facing names, docstrings, or messages, and keep it in sync: whenever you add, rename, or change the contract of a public type/method, update the matching entry in `CONTEXT.md` (the code is the source of truth — the glossary follows it).
+
 ## Tests
 
 Tests live in `tests/results/` and lean heavily on `pytest.mark.parametrize` with explicit human-readable `ids=` for each case. Follow that convention — add cases to the existing parametrized tables rather than writing one-off test functions, and import the public API from `results` (e.g. `from results import Ok, Err, Some, Null`).
