@@ -433,8 +433,6 @@ def test_some_none_is_forbidden() -> None:
     with pytest.raises(ValueError, match="Some.None. is forbidden"):
         Some(None)
     with pytest.raises(ValueError, match="Some.None. is forbidden"):
-        Option.some(None)
-    with pytest.raises(ValueError, match="Some.None. is forbidden"):
         Some(5).map(lambda _: None)
     with pytest.raises(ValueError, match="Some.None. is forbidden"):
         Some(Ok(None)).transpose()

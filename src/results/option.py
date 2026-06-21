@@ -63,26 +63,6 @@ class Option[T](abc.ABC):
 
         return inner
 
-    @classmethod
-    def some(cls, content: T) -> Option[T]:
-        """
-        Creates an `Option` instance that contains `Some` value.
-
-        Examples:
-        >>> assert Option.some(10) == Some(10)
-        """
-        return Some(content)
-
-    @classmethod
-    def none(cls) -> Option[T]:
-        """
-        Creates an `Option` instance that contains a `Null` value.
-
-        Examples:
-        >>> assert Option.none() == Null()
-        """
-        return Null()
-
     @abc.abstractmethod
     def and_[U](self, optb: Option[U]) -> Option[U]:
         """Returns [`Null`] if the option is [`Null`], otherwise returns `optb`.
