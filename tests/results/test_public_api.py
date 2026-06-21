@@ -19,6 +19,7 @@ PUBLIC_NAMES = [
     "Result",
     "ResultError",
     "Some",
+    "TransposeError",
     "UnwrapFailedError",
 ]
 
@@ -38,7 +39,7 @@ def test_public_all_has_no_drift() -> None:
     [
         (
             "results.results",
-            {"Result", "Ok", "Err", "ResultError", "UnwrapFailedError"},
+            {"Result", "Ok", "Err", "ResultError", "TransposeError", "UnwrapFailedError"},
         ),
         ("results.option", {"Option", "Some", "Null"}),
     ],

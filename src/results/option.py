@@ -27,31 +27,34 @@ class Option[T](abc.ABC):
     def from_fn[**P](
         fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs
     ) -> Option[T]:
-        """Turns a function so that it returns a `Option<T>` instead of `T | None`.
+        """Call `fn(*args, **kwargs)` and wrap its result as an `Option[T]`:
+        `None` becomes `Null()`, any other value becomes `Some(value)`.
 
         Caller is responsible for ensuring that the function does not raise an exception.
         # Examples:
 
-        >>> def get(a: int, b: int) -> float:
-        ...     return a / b
+        >>> def first(xs: list[int]) -> int | None:
+        ...     return xs[0] if xs else None
         ...
-        >>> assert Result.from_fn(div, 10, 2) == Result.Ok(5.0)
-        >>> assert Result.from_fn(div, 10, 0).map_err(str) == Result.Err("division by zero")
+        >>> assert Option.from_fn(first, [1, 2]) == Some(1)
+        >>> assert Option.from_fn(first, []) == Null()
         """
         return Null() if (result := fn(*args, **kwargs)) is None else Some(result)
 
     @staticmethod
     def as_option[**P](fn: Callable[P, T]) -> Callable[P, Option[T]]:
         """
-        Decorates a function so that it returns a `Optional<T>` instead of `T`.
+        Decorates a function so that it returns an `Option[T]` instead of `T | None`:
+        a `None` return becomes `Null()`, any other value becomes `Some(value)`.
 
         # Examples:
 
         >>> @Option.as_option
-        >>> def div(a: int, b: int) -> float:
-        ...     return a / b
-        >>> assert div(10, 2) == 5.0
-        >>> assert div(10, 0) is None
+        ... def first(xs: list[int]) -> int | None:
+        ...     return xs[0] if xs else None
+        ...
+        >>> assert first([1, 2]) == Some(1)
+        >>> assert first([]) == Null()
         """
 
         @functools.wraps(fn)
@@ -293,19 +296,22 @@ class Option[T](abc.ABC):
         """
         Transposes an `Option` of a [`Result`] into a [`Result`] of an `Option`.
 
-        Null will be mapped to:
-        #### Ok(Null)
-        Some(Ok(_)) and Some(Err(_)) will be mapped to:
-        #### Ok(Some(_)) and Err(_).
+        - `Null()` → `Ok(Null())`
+        - `Some(Ok(v))` → `Ok(Some(v))`
+        - `Some(Err(e))` → `Err(e)`
+        - `Some(non-Result value)` → raises `TransposeError` (no silent fallback)
+
+        # Raises
+            `TransposeError` if a `Some` holds a value that is not a `Result`.
 
         # Examples:
 
         >>> msg = "Something went wrong"
-        >>> no_result = "No result"
         >>> assert Some(Result.Ok("foo")).transpose() == Result.Ok(Some("foo"))
         >>> assert Some(Result.Err(msg)).transpose() == Result.Err(msg)
         >>> assert Null().transpose() == Result.Ok(Null())
-        >>> assert Some(no_result).transpose() == Result.Ok(Some(no_result))
+        >>> with pytest.raises(TransposeError):
+        ...     Some("No result").transpose()
         """
 
     @abc.abstractmethod
@@ -400,8 +406,8 @@ class Option[T](abc.ABC):
         If `self` is `Some((a, b))`, returns `(Some(a), Some(b))`.
         If `self` is `Null()`, returns `(Null(), Null())`.
 
-        Invariante: Ist eine Tupelkomponente `None`, wirft `Some(None)` beim
-        Konstruieren `ValueError` — der Guard in `Some.__init__` greift auch hier.
+        Invariant: if a tuple component is `None`, constructing `Some(None)`
+        raises `ValueError` — the guard in `Some.__init__` applies here too.
 
         # Examples:
 
@@ -500,16 +506,17 @@ class Some[T](Option[T]):
         return Ok(self._value)
 
     def transpose[E](self) -> Result[Option[T], E]:
-        # ponytail: deferred import — see ok_or.
-        from .results import Err, Ok
+        # ponytail: deferred import breaks the results<->option cycle.
+        from .results import Result, TransposeError
 
-        match self._value:
-            case Ok(value):
-                return Ok(Some(value))
-            case Err() as err:
-                return err
-            case _:
-                return Ok(self)
+        # ponytail: Result carries the dispatch — Ok(v).map(Some) -> Ok(Some(v)),
+        # Err(e).map(Some) -> Err(e). A non-Result payload is a contract violation.
+        if isinstance(self._value, Result):
+            return self._value.map(Some)
+        raise TransposeError(
+            "Option.transpose expects Option[Result[...]]; "
+            f"Some holds a non-Result value: {self._value!r}"
+        )
 
     def unwrap(self) -> T:
         return self._value

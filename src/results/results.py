@@ -3,12 +3,9 @@ from __future__ import annotations
 import abc
 import functools
 from collections.abc import Callable, Iterator
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast, final
+from typing import Any, Literal, NoReturn, final
 
-from .option import Null, Some
-
-if TYPE_CHECKING:
-    from .option import Option
+from .option import Null, Option, Some
 
 
 class ResultError(Exception):
@@ -17,6 +14,16 @@ class ResultError(Exception):
 
 class UnwrapFailedError(ResultError):
     """Unwrap failed error."""
+
+
+class TransposeError(ResultError):
+    """Raised by `transpose` when the payload is not the expected wrapped type.
+
+    `Option.transpose` expects `Option[Result[...]]` and `Result.transpose`
+    expects `Result[Option[...]]`. Python cannot enforce that at the type level,
+    so a foreign payload (a `Some`/`Ok` holding a non-`Result`/non-`Option`
+    value) is a programming error — rejected loudly instead of silently wrapped.
+    """
 
 
 class Result[T, E](abc.ABC):
@@ -130,7 +137,7 @@ class Result[T, E](abc.ABC):
         """
 
     @abc.abstractmethod
-    def map_or[U](self, op: Callable[[T], U], default: U) -> U:
+    def map_or[U](self, default: U, op: Callable[[T], U]) -> U:
         """Returns the provided default result (if [`Err`]), or applies a function to the contained value (if [`Ok`])."""
 
     @abc.abstractmethod
@@ -160,10 +167,13 @@ class Result[T, E](abc.ABC):
         - `Ok(Some(v))` → `Some(Ok(v))`
         - `Ok(Null())` → `Null()`
         - `Err(e)` → `Some(Err(e))`
-        - `Ok(non-Option value)` → `Some(self)` (lenient fallback)
+        - `Ok(non-Option value)` → raises `TransposeError` (no silent fallback)
 
         This is the mirror image of [`Option.transpose`], and the two are inverses:
         `Some(Ok(v)).transpose().transpose() == Some(Ok(v))`.
+
+        # Raises
+            `TransposeError` if an `Ok` holds a value that is not an `Option`.
         """
 
     @abc.abstractmethod
@@ -246,11 +256,11 @@ class Ok[T](Result[T, Any]):
     def map[U, E](self, fn: Callable[[T], U]) -> Result[U, E]:
         return Ok(fn(self._inner_value))
 
-    def map_err[U, E, F](self, fn: Callable[[E], F]) -> Result[U, F]:
-        return Ok(cast(U, self._inner_value))
+    def map_err[E, F](self, fn: Callable[[E], F]) -> Result[T, F]:
+        return Ok(self._inner_value)
 
-    def map_or[U](self, fn: Callable[[T], U], default_value: U) -> U:
-        return fn(self._inner_value)
+    def map_or[U](self, default: U, op: Callable[[T], U]) -> U:
+        return op(self._inner_value)
 
     def map_or_else[U, E](
         self,
@@ -269,15 +279,14 @@ class Ok[T](Result[T, Any]):
         return Ok(self._inner_value)
 
     def transpose[U, E](self) -> Option[Result[U, E]]:
-        match self._inner_value:
-            case Some(value):
-                return Some(Ok(value))
-            case Null():
-                return Null()
-            case _:
-                return Some(
-                    cast(Result[U, E], self)
-                )  # ponytail: lenient fallback — non-Option payload
+        # ponytail: Option carries the dispatch — Some(v).map(Ok) -> Some(Ok(v)),
+        # Null().map(Ok) -> Null(). A non-Option payload is a contract violation.
+        if isinstance(self._inner_value, Option):
+            return self._inner_value.map(Ok)
+        raise TransposeError(
+            "Result.transpose expects Result[Option[...]]; "
+            f"Ok holds a non-Option value: {self._inner_value!r}"
+        )
 
     def unwrap(self) -> T:
         return self._inner_value
@@ -355,8 +364,8 @@ class Err[E](Result[Any, E]):
     def map_err[U, F](self, fn: Callable[[E], F]) -> Result[U, F]:
         return Err(fn(self._inner_value))
 
-    def map_or[T, U](self, fn: Callable[[T], U], default_value: U) -> U:
-        return default_value
+    def map_or[T, U](self, default: U, op: Callable[[T], U]) -> U:
+        return default
 
     def map_or_else[T, U](
         self,
