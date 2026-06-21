@@ -133,6 +133,60 @@ def test_is_some_and_when_some_value_should_match_predicate(
 
 
 @pytest.mark.parametrize(
+    "option, predicate, expected",
+    [
+        (Null(), lambda x: x % 2 == 0, True),
+        (Some(10), lambda x: x % 2 == 0, True),
+        (Some(15), lambda x: x % 2 == 0, False),
+    ],
+    ids=[
+        "test_is_none_or_when_null_should_return_true",
+        "test_is_none_or_when_some_and_predicate_true_should_return_true",
+        "test_is_none_or_when_some_and_predicate_false_should_return_false",
+    ],
+)
+def test_is_none_or_when_null_returns_true_and_some_defers_to_predicate(
+    option, predicate, expected
+) -> None:
+    assert option.is_none_or(predicate) == expected
+
+
+def test_inspect_runs_fn_only_on_some_and_returns_self() -> None:
+    calls: list[int] = []
+    fn = lambda v: calls.append(v)  # noqa: E731
+
+    some = Some(42)
+    result = some.inspect(fn)
+    assert result is some
+    assert calls == [42]
+
+    calls.clear()
+    null: Option = Null()
+    result_null = null.inspect(fn)
+    assert result_null is null
+    assert calls == []
+
+
+@pytest.mark.parametrize(
+    "option, expected_calls",
+    [
+        (Some(7), [7]),
+        (Null(), []),
+    ],
+    ids=[
+        "test_inspect_when_some_should_call_fn_with_value",
+        "test_inspect_when_null_should_not_call_fn",
+    ],
+)
+def test_inspect_when_called_should_side_effect_on_some_and_noop_on_null(
+    option, expected_calls
+) -> None:
+    calls: list[int] = []
+    option.inspect(lambda v: calls.append(v))
+    assert calls == expected_calls
+
+
+@pytest.mark.parametrize(
     "option, func, expected",
     [
         (Some(10), lambda i: i * 2, Some(20)),

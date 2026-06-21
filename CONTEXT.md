@@ -120,6 +120,28 @@ Die abwesende Variante von `Option`; `@final`-Subklasse ohne gespeicherten Wert.
 (`Null("Error")`, `Null(10)`) sind fehlerhaft: `Null` nimmt keine Parameter und
 würde mit `TypeError` scheitern.
 
+### is_none_or / inspect
+
+Zwei `Option`-Methoden für **nicht-transformierende** Interaktion mit dem
+enthaltenen Wert:
+
+- `is_none_or(fn)` — gibt `True` zurück, wenn die Option `Null` ist, oder wenn
+  sie `Some(v)` ist und `fn(v)` wahr ergibt. Komplement zu `is_some_and`:
+  `Null()` → immer `True`; `Some(v)` → `fn(v)`.
+- `inspect(fn)` — ruft `fn(v)` auf (ausschließlich für Nebeneffekte wie Logging
+  oder Debugging), wenn die Option `Some(v)` ist, und gibt **dasselbe Objekt**
+  zurück (`result is self`). Für `Null` ist es ein No-op. Der Rückgabewert von
+  `fn` wird ignoriert.
+
+Beide Methoden sind polymorphisch implementiert (`@abc.abstractmethod` auf `Option`,
+je eine Implementierung auf `Some` und `Null`); kein `isinstance`- oder
+`_value is None`-Check im Körper. `inspect` erzeugt keine neuen Wrapper — weder
+`Some(...)` noch `Null()` — und kann deshalb auch nie `Some(None)` erzeugen.
+
+*Avoid:* `inspect` mit `map` verwechseln. `map` transformiert und gibt einen
+**neuen** Container zurück; `inspect` gibt `self` zurück und ist für reine
+Nebeneffekte gedacht.
+
 ### unwrap
 
 Oberbegriff für den **wert-entpackenden Zugriff** auf der „guten" Seite:

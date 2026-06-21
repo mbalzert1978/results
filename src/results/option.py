@@ -128,26 +128,19 @@ class Option[T](abc.ABC):
         """
 
     @abc.abstractmethod
-    def is_some(self) -> bool:
+    def inspect(self, fn: Callable[[T], object]) -> Option[T]:
         """
-        Returns `true` if the option is a [`Some`] value.
+        Calls `fn` with the contained value if [`Some`], returns `self` unchanged.
+        If [`Null`], does nothing and returns `self`. The return value of `fn` is
+        discarded; `inspect` is called purely for side effects (e.g. logging).
 
         # Examples:
 
-        >>> assert not Null().is_some()
-        >>> assert Some(10).is_some()
-        """
-
-    @abc.abstractmethod
-    def is_some_and(self, op: Callable[[T], bool]) -> bool:
-        """
-        Returns `true` if the option is a [`Some`] and the value inside of it matches a predicate.
-
-        # Examples:
-
-        >>> assert Some(10).is_some_and(is_even)
-        >>> assert not Some(15).is_some_and(is_even)
-        >>> assert not Null().is_some_and(is_even)
+        >>> log = []
+        >>> assert Some(10).inspect(log.append) == Some(10)
+        >>> assert log == [10]
+        >>> assert Null().inspect(log.append) == Null()
+        >>> assert log == [10]  # unchanged
         """
 
     @abc.abstractmethod
@@ -159,6 +152,19 @@ class Option[T](abc.ABC):
 
         >>> assert Null().is_none()
         >>> assert not Some(10).is_none()
+        """
+
+    @abc.abstractmethod
+    def is_none_or(self, fn: Callable[[T], bool]) -> bool:
+        """
+        Returns `true` if the option is [`Null`], or if it is [`Some`] and the
+        value inside matches the predicate `fn`. The complement of `is_some_and`.
+
+        # Examples:
+
+        >>> assert Null().is_none_or(is_even)
+        >>> assert Some(10).is_none_or(is_even)
+        >>> assert not Some(15).is_none_or(is_even)
         """
 
     @abc.abstractmethod
@@ -348,14 +354,21 @@ class Some[T](Option[T]):
     def filter(self, predicate: Callable[[T], bool]) -> Option[T]:
         return self if predicate(self._value) else Null()
 
+    def inspect(self, fn: Callable[[T], object]) -> Option[T]:
+        fn(self._value)
+        return self
+
+    def is_none(self) -> Literal[False]:
+        return False
+
+    def is_none_or(self, fn: Callable[[T], bool]) -> bool:
+        return fn(self._value)
+
     def is_some(self) -> Literal[True]:
         return True
 
     def is_some_and(self, op: Callable[[T], bool]) -> bool:
         return op(self._value)
-
-    def is_none(self) -> Literal[False]:
-        return False
 
     def map[U](self, op: Callable[[T], U]) -> Option[U]:
         return Some(op(self._value))
@@ -439,14 +452,20 @@ class Null[T](Option[T]):
     def filter(self, predicate: Callable[[T], bool]) -> Option[T]:
         return self
 
+    def inspect(self, fn: Callable[[T], object]) -> Option[T]:
+        return self
+
+    def is_none(self) -> Literal[True]:
+        return True
+
+    def is_none_or(self, fn: Callable[[T], bool]) -> Literal[True]:
+        return True
+
     def is_some(self) -> Literal[False]:
         return False
 
     def is_some_and(self, op: Callable[[T], bool]) -> Literal[False]:
         return False
-
-    def is_none(self) -> Literal[True]:
-        return True
 
     def map[U](self, op: Callable[[T], U]) -> Option[U]:
         return Null()
