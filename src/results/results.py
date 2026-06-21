@@ -310,14 +310,6 @@ class Err[E](Result[Any, E]):
         return fn(self._inner_value)
 
 
-class OptionError(Exception):
-    """Base result error."""
-
-
-class TransposeError(OptionError):
-    """Transpose failed error."""
-
-
 def Some[T](value: T) -> Option[T]:
     """
     Creates an `Option` instance that contains `Some` value.

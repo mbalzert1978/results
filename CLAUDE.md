@@ -39,7 +39,7 @@ __Cross-conversions__ tie the two families together: `Result.ok()` / `Result.err
 
 __Constructors from callables__: `Result.as_result` (decorator) and `Result.from_fn` wrap exception-raising functions (catching `Exception` into `Err`); `Option.as_option` (decorator) and `Option.from_fn` wrap `None`-returning functions into `Some`/`Null`.
 
-__Failure mode__: unwrap-style failures raise `UnwrapFailedError` (subclass of `ResultError`); `Option`/transpose errors derive from `OptionError` / `TransposeError`. `Err.unwrap()` chains the original exception via `raise ... from` when the inner value is a `BaseException`.
+__Failure mode__: unwrap-style failures raise `UnwrapFailedError` (subclass of `ResultError`) — including `Option.expect`/`Option.unwrap`, which use this Result-side class. `Err.unwrap()` chains the original exception via `raise ... from` when the inner value is a `BaseException`.
 
 __Pattern matching__ relies on `__match_args__`: match `Ok`/`Err` on their inner value (`case Ok(v)`), and match `Option` on its content (`case Option(value)` / `case Option(None)`).
 
