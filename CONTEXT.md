@@ -165,6 +165,23 @@ zurück, ohne die fehler-/leerseitige Variante anzufassen: `Result.map` wirkt au
 *Avoid:* `map` mit `and_then` verwechseln. Gibt deine Funktion bereits ein
 `Result`/`Option` zurück, erzeugt `map` eine **doppelte** Verschachtelung.
 
+### inspect / inspect_err
+
+Seiteneffekt-Inspektoren, die den Container **unverändert** zurückgeben:
+`Result.inspect(fn)` ruft `fn` mit dem `Ok`-Wert auf (Nebeneffekt) und gibt
+`self` zurück; bei `Err` ist es ein No-op. `Result.inspect_err(fn)` spiegelt
+das: `fn` wird mit dem `Err`-Wert aufgerufen, bei `Ok` kein Aufruf.
+
+- Invariante: Rückgabe ist **dasselbe Objekt** (`inspect(fn) is self`) — kein
+  neuer Container, keine Transformation. Der Rückgabewert von `fn` wird
+  verworfen.
+- Verwendungszweck: Logging, Metriken, Debuggen in einer Methodenkette, ohne
+  den Datenfluss zu unterbrechen.
+
+*Avoid:* `inspect` mit `map` verwechseln. `map` **transformiert** den Wert und
+erzeugt einen neuen Container; `inspect` lässt den Container unangetastet und
+dient allein dem Nebeneffekt.
+
 ### and_then
 
 Verkettet eine Folgeoperation, die selbst wieder ein `Result`/`Option` liefert
