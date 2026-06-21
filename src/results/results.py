@@ -199,37 +199,37 @@ class Result[T, E](abc.ABC):
 
 @final
 class Ok[T](Result[T, Any]):
-    __slots__ = ("_inner_value",)
-    __match_args__ = ("_inner_value",)
+    __slots__ = ("_value",)
+    __match_args__ = ("_value",)
 
     UNWRAP_ERROR_MESSAGE = "Called `.%s` on an [`Ok`] value: %s"
 
     def __iter__(self) -> Iterator[T]:
-        yield self._inner_value
+        yield self._value
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._inner_value!r})"
+        return f"{type(self).__name__}({self._value!r})"
 
     def __hash__(self) -> int:
-        return hash(self._inner_value) * 41
+        return hash(self._value) * 41
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, Ok) and self._inner_value == other._inner_value
+        return isinstance(other, Ok) and self._value == other._value
 
-    def __init__(self, inner_value: T) -> None:
-        self._inner_value = inner_value
+    def __init__(self, value: T) -> None:
+        self._value = value
 
     def and_[U, E](self, res: Result[U, E]) -> Result[U, E]:
         return res
 
     def and_then[U, E](self, op: Callable[[T], Result[U, E]]) -> Result[U, E]:
-        return op(self._inner_value)
+        return op(self._value)
 
     def err[E](self) -> Option[E]:
         return Null()
 
     def expect(self, msg: str) -> T:
-        return self._inner_value
+        return self._value
 
     def expect_err(self, msg: str) -> NoReturn:
         raise UnwrapFailedError(msg)
@@ -244,68 +244,68 @@ class Ok[T](Result[T, Any]):
         return True
 
     def is_ok_and(self, fn: Callable[[T], bool]) -> bool:
-        return fn(self._inner_value)
+        return fn(self._value)
 
     def inspect(self, fn: Callable[[T], Any]) -> Result[T, Any]:
-        fn(self._inner_value)
+        fn(self._value)
         return self
 
     def inspect_err[E](self, fn: Callable[[E], Any]) -> Result[T, E]:
         return self
 
     def map[U, E](self, fn: Callable[[T], U]) -> Result[U, E]:
-        return Ok(fn(self._inner_value))
+        return Ok(fn(self._value))
 
     def map_err[E, F](self, fn: Callable[[E], F]) -> Result[T, F]:
-        return Ok(self._inner_value)
+        return Ok(self._value)
 
     def map_or[U](self, default: U, op: Callable[[T], U]) -> U:
-        return op(self._inner_value)
+        return op(self._value)
 
     def map_or_else[U, E](
         self,
         default: Callable[[E], U],
         op: Callable[[T], U],
     ) -> U:
-        return op(self._inner_value)
+        return op(self._value)
 
     def ok(self) -> Option[T]:
-        return Some(self._inner_value)
+        return Some(self._value)
 
     def or_[E, F](self, res: Result[T, F]) -> Result[T, F]:
         return self
 
     def or_else[E](self, op: Callable[[E], Result[T, E]]) -> Result[T, E]:
-        return Ok(self._inner_value)
+        return Ok(self._value)
 
     def transpose[U, E](self) -> Option[Result[U, E]]:
         # ponytail: Option carries the dispatch — Some(v).map(Ok) -> Some(Ok(v)),
         # Null().map(Ok) -> Null(). A non-Option payload is a contract violation.
-        if isinstance(self._inner_value, Option):
-            return self._inner_value.map(Ok)
+        if isinstance(self._value, Option):
+            return self._value.map(Ok)
         raise TransposeError(
             "Result.transpose expects Result[Option[...]]; "
-            f"Ok holds a non-Option value: {self._inner_value!r}"
+            f"Ok holds a non-Option value: {self._value!r}"
         )
 
     def unwrap(self) -> T:
-        return self._inner_value
+        return self._value
 
     def unwrap_err(self) -> NoReturn:
-        msg = self.UNWRAP_ERROR_MESSAGE % ("unwrap_err", repr(self._inner_value))
+        msg = self.UNWRAP_ERROR_MESSAGE % ("unwrap_err", repr(self._value))
         raise UnwrapFailedError(msg)
 
     def unwrap_or(self, default_value: T) -> T:
-        return self._inner_value
+        return self._value
 
     def unwrap_or_else[E](self, op: Callable[[E], T]) -> T:
-        return self._inner_value
+        return self._value
 
 
 @final
 class Err[E](Result[Any, E]):
-    __slots__ = ("_inner_value",)
-    __match_args__ = ("_inner_value",)
+    __slots__ = ("_value",)
+    __match_args__ = ("_value",)
 
     UNWRAP_ERROR_MESSAGE = "Called `.%s` on an [`Err`] value: %s"
 
@@ -313,16 +313,16 @@ class Err[E](Result[Any, E]):
         yield None
 
     def __repr__(self) -> str:
-        return f"Err({self._inner_value!r})"
+        return f"Err({self._value!r})"
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, Err) and self._inner_value == other._inner_value
+        return isinstance(other, Err) and self._value == other._value
 
     def __hash__(self) -> int:
-        return hash(self._inner_value) * 41
+        return hash(self._value) * 41
 
-    def __init__(self, inner_value: E) -> None:
-        self._inner_value = inner_value
+    def __init__(self, value: E) -> None:
+        self._value = value
 
     def and_[T, U](self, res: Result[U, E]) -> Result[U, E]:
         return self
@@ -331,19 +331,19 @@ class Err[E](Result[Any, E]):
         return self
 
     def err(self) -> Option[E]:
-        return Some(self._inner_value)
+        return Some(self._value)
 
     def expect(self, msg: str) -> NoReturn:
         raise UnwrapFailedError(msg)
 
     def expect_err(self, msg: str) -> E:
-        return self._inner_value
+        return self._value
 
     def is_err(self) -> Literal[True]:
         return True
 
     def is_err_and(self, fn: Callable[[E], bool]) -> bool:
-        return fn(self._inner_value)
+        return fn(self._value)
 
     def is_ok(self) -> Literal[False]:
         return False
@@ -355,14 +355,14 @@ class Err[E](Result[Any, E]):
         return self
 
     def inspect_err(self, fn: Callable[[E], Any]) -> Result[Any, E]:
-        fn(self._inner_value)
+        fn(self._value)
         return self
 
     def map[T, U](self, fn: Callable[[T], U]) -> Result[U, E]:
         return self
 
     def map_err[U, F](self, fn: Callable[[E], F]) -> Result[U, F]:
-        return Err(fn(self._inner_value))
+        return Err(fn(self._value))
 
     def map_or[T, U](self, default: U, op: Callable[[T], U]) -> U:
         return default
@@ -372,7 +372,7 @@ class Err[E](Result[Any, E]):
         default: Callable[[E], U],
         op: Callable[[T], U],
     ) -> U:
-        return default(self._inner_value)
+        return default(self._value)
 
     def ok(self) -> Option[Any]:
         return Null()
@@ -381,24 +381,24 @@ class Err[E](Result[Any, E]):
         return res
 
     def or_else[T](self, op: Callable[[E], Result[T, E]]) -> Result[T, E]:
-        return op(self._inner_value)
+        return op(self._value)
 
     def transpose[T, U](self) -> Option[Result[U, E]]:
         return Some(self)
 
     def unwrap(self) -> NoReturn:
         exc = UnwrapFailedError(
-            self.UNWRAP_ERROR_MESSAGE % ("unwrap", repr(self._inner_value)),
+            self.UNWRAP_ERROR_MESSAGE % ("unwrap", repr(self._value)),
         )
-        if isinstance(self._inner_value, BaseException):
-            raise exc from self._inner_value
+        if isinstance(self._value, BaseException):
+            raise exc from self._value
         raise exc
 
     def unwrap_err(self) -> E:
-        return self._inner_value
+        return self._value
 
     def unwrap_or[T](self, default_value: T) -> T:
         return default_value
 
     def unwrap_or_else[T](self, fn: Callable[[E], T]) -> T:
-        return fn(self._inner_value)
+        return fn(self._value)
