@@ -8,7 +8,7 @@ This library provides a robust mechanism for handling operations that can result
 - **Comprehensive API**: Methods for checking, transforming, and retrieving contained values or errors.
 - **Functional Programming Friendly**: Supports `map`, `map_err`, `and_then`, and more to work with results without explicit error checking.
 - **Option Type**: Provides `Some` and `Null` to handle optional values, similar to `Option` in Rust.
-- **Error Handling**: Custom exceptions like `UnwrapFailedError` and `TransposeError` for robust error management.
+- **Error Handling**: Custom exceptions like `UnwrapFailedError` for robust error management.
 
 ## Classes and Methods
 
@@ -71,8 +71,6 @@ This library provides a robust mechanism for handling operations that can result
 
 - **ResultError**: Base class for result-related errors.
 - **UnwrapFailedError**: Raised when an unwrap operation fails.
-- **OptionError**: Base class for option-related errors.
-- **TransposeError**: Raised when a transpose operation fails.
 
 ## Project Structure
 

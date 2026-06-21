@@ -3,11 +3,9 @@ from .results import (
     Null,
     Ok,
     Option,
-    OptionError,
     Result,
     ResultError,
     Some,
-    TransposeError,
     UnwrapFailedError,
 )
 
@@ -16,10 +14,8 @@ __all__ = [
     "Null",
     "Ok",
     "Option",
-    "OptionError",
     "Result",
     "ResultError",
     "Some",
-    "TransposeError",
     "UnwrapFailedError",
 ]
