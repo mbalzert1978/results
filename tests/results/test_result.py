@@ -93,11 +93,17 @@ def test_is_ok_and(result, predicate, expected):
         (Err(2), lambda x: x > 1, True),
         (Err(0), lambda x: x > 1, False),
         (Ok("Something went wrong"), lambda x: x > 1, False),
+        (Ok(42), lambda _: 1 / 0, False),
+        (Ok(0), lambda _: 1 / 0, False),
+        (Ok(""), lambda _: 1 / 0, False),
     ],
     ids=[
         "is_err_and when Err value matches predicate should return True",
         "is_err_and when Err value does not match predicate should return False",
         "is_err_and when Ok value should return False",
+        "is_err_and when Ok predicate must not be called (int value)",
+        "is_err_and when Ok predicate must not be called (falsy int)",
+        "is_err_and when Ok predicate must not be called (empty string)",
     ],
 )
 def test_is_err_and(result, predicate, expected):
@@ -265,26 +271,22 @@ def test_unwrap_ok(result, expected):
     assert result.unwrap() == expected
 
 
+_exc_for_cause = ValueError("Error message")
+
 @pytest.mark.parametrize(
-    "result, expected",
+    "result, match, expected_cause",
     [
         (
             Err("Emergency failure"),
-            pytest.raises(
-                UnwrapFailedError,
-                match=re.escape(
-                    "Called `.unwrap` on an [`Err`] value: 'Emergency failure'"
-                ),
-            ),
+            re.escape("Called `.unwrap` on an [`Err`] value: 'Emergency failure'"),
+            None,
         ),
         (
-            Err(ValueError("Error message")),
-            pytest.raises(
-                UnwrapFailedError,
-                match=re.escape(
-                    "Called `.unwrap` on an [`Err`] value: ValueError('Error message'"
-                ),
+            Err(_exc_for_cause),
+            re.escape(
+                "Called `.unwrap` on an [`Err`] value: ValueError('Error message'"
             ),
+            _exc_for_cause,
         ),
     ],
     ids=[
@@ -292,9 +294,10 @@ def test_unwrap_ok(result, expected):
         "unwrap when Err value should raise UnwrapFailedError with exception",
     ],
 )
-def test_unwrap_err(result, expected):
-    with expected:
+def test_unwrap_err(result, match, expected_cause):
+    with pytest.raises(UnwrapFailedError, match=match) as excinfo:
         result.unwrap()
+    assert excinfo.value.__cause__ is expected_cause
 
 
 @pytest.mark.parametrize(

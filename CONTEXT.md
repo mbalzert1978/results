@@ -3,8 +3,10 @@
 Dieses Dokument hält die *Ubiquitous Language* des `results`-Repositories fest:
 die verbindlichen Fachbegriffe, ihre präzisen Definitionen und bewusste
 Abgrenzungen (was ein Begriff **nicht** meint). Maßgeblich ist immer der Code in
-[src/results/results.py](src/results/results.py); weicht dieses Dokument vom Code
-ab, gilt der Code — und das Dokument ist zu korrigieren.
+[src/results/results.py](src/results/results.py) (Familie `Result`/`Ok`/`Err`)
+und [src/results/option.py](src/results/option.py) (Familie `Option`/`Some`/`Null`);
+weicht dieses Dokument vom Code ab, gilt der Code — und das Dokument ist zu
+korrigieren.
 
 ## Einleitung
 

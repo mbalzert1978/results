@@ -1,11 +1,9 @@
+from .option import Null, Option, Some
 from .results import (
     Err,
-    Null,
     Ok,
-    Option,
     Result,
     ResultError,
-    Some,
     UnwrapFailedError,
 )
 
