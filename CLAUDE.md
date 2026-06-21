@@ -26,7 +26,7 @@ There is no pytest/ruff/mypy configuration block in `pyproject.toml` — all thr
 
 ## Architecture
 
-The entire library is one module, [src/results/results.py](src/results/results.py); [src/results/__init__.py](src/results/__init__.py) only re-exports the public names. There are two parallel, Rust-inspired type families with a deliberately different internal design:
+The library is split across two modules: the `Result` family (`Result`/`Ok`/`Err`) plus the error hierarchy live in [src/results/results.py](src/results/results.py), and the `Option` family (`Option`/`Some`/`Null`) lives in [src/results/option.py](src/results/option.py); [src/results/__init__.py](src/results/__init__.py) re-exports the public names from both. The two modules are mutually dependent — `results.py` imports `Some`/`Null` at module top, while `option.py` breaks the cycle with function-local (deferred) imports of `Ok`/`Err`/`UnwrapFailedError` inside the few Option methods that construct the Result family (see [docs/decisions/issue-13-split-option-module.md](docs/decisions/issue-13-split-option-module.md)). There are two parallel, Rust-inspired type families with a deliberately different internal design:
 
 __`Result[T, E]`__ is an `abc.ABC` with two `@final` concrete subclasses, `Ok[T]` (declared `Result[T, Any]`) and `Err[E]` (declared `Result[Any, E]`). Every method is abstract on the base and implemented on both subclasses — behavior is selected by *polymorphism*, never by `isinstance`/flag checks inside a method. When adding a method to `Result`, add the `@abc.abstractmethod` stub plus an `Ok` and an `Err` implementation.
 
@@ -53,7 +53,7 @@ Tests live in `tests/results/` and lean heavily on `pytest.mark.parametrize` wit
 
 ## Note
 
-The "Project Structure" section of [README.md](README.md) is stale — it lists `results.pyi` and `test_factories.py`, neither of which exists.
+The "Project Structure" section of [README.md](README.md) now reflects the real layout (`src/results/option.py` + `src/results/results.py`, `tests/results/test_public_api.py`).
 
 ## graphify
 

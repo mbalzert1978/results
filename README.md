@@ -82,15 +82,15 @@ This library provides a robust mechanism for handling operations that can result
 ├── src
 │   └── results
 │       ├── __init__.py
+│       ├── option.py
 │       ├── py.typed
-│       ├── results.py
-│       └── results.pyi
+│       └── results.py
 └── tests
     ├── __init__.py
     └── results
         ├── __init__.py
-        ├── test_factories.py
         ├── test_option.py
         ├── test_pattern_matching.py
+        ├── test_public_api.py
         └── test_result.py
 ```
