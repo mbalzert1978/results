@@ -273,6 +273,7 @@ def test_unwrap_ok(result, expected):
 
 _exc_for_cause = ValueError("Error message")
 
+
 @pytest.mark.parametrize(
     "result, match, expected_cause",
     [
@@ -485,3 +486,39 @@ def test_hash():
 )
 def test__ne__(result, other, expected):
     assert (result != other) == expected
+
+
+@pytest.mark.parametrize(
+    "result, expected_calls, expected_identity",
+    [
+        (Ok(42), [42], True),
+        (Err("boom"), [], True),
+    ],
+    ids=[
+        "inspect when Ok value should call fn with value and return self",
+        "inspect when Err value should be no-op and return self",
+    ],
+)
+def test_inspect(result, expected_calls, expected_identity):
+    calls: list = []
+    returned = result.inspect(calls.append)
+    assert calls == expected_calls
+    assert (returned is result) == expected_identity
+
+
+@pytest.mark.parametrize(
+    "result, expected_calls, expected_identity",
+    [
+        (Ok(42), [], True),
+        (Err("boom"), ["boom"], True),
+    ],
+    ids=[
+        "inspect_err when Ok value should be no-op and return self",
+        "inspect_err when Err value should call fn with error and return self",
+    ],
+)
+def test_inspect_err(result, expected_calls, expected_identity):
+    calls: list = []
+    returned = result.inspect_err(calls.append)
+    assert calls == expected_calls
+    assert (returned is result) == expected_identity

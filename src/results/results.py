@@ -98,6 +98,18 @@ class Result[T, E](abc.ABC):
         """Returns `True` if the result is an [`Ok`] and the value inside of it matches a predicate."""
 
     @abc.abstractmethod
+    def inspect(self, fn: Callable[[T], Any]) -> Result[T, E]:
+        """Calls `fn` with the contained value if [`Ok`], then returns `self` unchanged.
+        If [`Err`], returns `self` without calling `fn`.
+        """
+
+    @abc.abstractmethod
+    def inspect_err(self, fn: Callable[[E], Any]) -> Result[T, E]:
+        """Calls `fn` with the contained error if [`Err`], then returns `self` unchanged.
+        If [`Ok`], returns `self` without calling `fn`.
+        """
+
+    @abc.abstractmethod
     def map[U](self, fn: Callable[[T], U]) -> Result[U, E]:
         """Maps a `Result<T, E>` to `Result<U, E>` by applying a function to a contained [`Ok`] value,
         leaving an [`Err`] value untouched.
@@ -192,6 +204,13 @@ class Ok[T](Result[T, Any]):
     def is_ok_and(self, fn: Callable[[T], bool]) -> bool:
         return fn(self._inner_value)
 
+    def inspect(self, fn: Callable[[T], Any]) -> Result[T, Any]:
+        fn(self._inner_value)
+        return self
+
+    def inspect_err[E](self, fn: Callable[[E], Any]) -> Result[T, E]:
+        return self
+
     def map[U, E](self, fn: Callable[[T], U]) -> Result[U, E]:
         return Ok(fn(self._inner_value))
 
@@ -273,6 +292,13 @@ class Err[E](Result[Any, E]):
 
     def is_ok_and[T](self, fn: Callable[[T], bool]) -> bool:
         return False
+
+    def inspect[T](self, fn: Callable[[T], Any]) -> Result[T, E]:
+        return self
+
+    def inspect_err(self, fn: Callable[[E], Any]) -> Result[Any, E]:
+        fn(self._inner_value)
+        return self
 
     def map[T, U](self, fn: Callable[[T], U]) -> Result[U, E]:
         return self
