@@ -607,3 +607,29 @@ def test_transpose_round_trip() -> None:
     # Null().transpose().transpose() == Null()
     null: Null[Result[int, str]] = Null()
     assert null.transpose().transpose() == null
+
+
+@pytest.mark.parametrize(
+    "result, expected",
+    [
+        (Ok(Ok(5)), Ok(5)),
+        (Ok(Err("e")), Err("e")),
+        (Err("e"), Err("e")),
+    ],
+    ids=[
+        "flatten Ok(Ok(v)) -> Ok(v)",
+        "flatten Ok(Err(e)) -> Err(e)",
+        "flatten Err(e) -> Err(e)",
+    ],
+)
+def test_flatten(result, expected):
+    assert result.flatten() == expected
+
+
+def test_flatten_ok_returns_inner_result_identity() -> None:
+    # Ok.flatten must return the inner Result unchanged — not a re-wrapped copy.
+    inner_ok: Result[int, str] = Ok(5)
+    assert Ok(inner_ok).flatten() is inner_ok
+
+    inner_err: Result[int, str] = Err("e")
+    assert Ok(inner_err).flatten() is inner_err
