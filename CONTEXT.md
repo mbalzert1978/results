@@ -361,22 +361,24 @@ Schachtelungs-Ebenen in entgegengesetzter Richtung und heben sich gegenseitig au
 - `Null()` → `Ok(Null())`
 - `Some(Ok(v))` → `Ok(Some(v))` (ist `v` `None`, wirft `Some(v)` → `ValueError`)
 - `Some(Err(e))` → `Err(e)`
-- nicht-`Result`-Inhalt → `Ok(self)` (unverändert eingepackt)
+- `Some(Nicht-Result-Wert)` → wirft `TransposeError` (kein stilles Einpacken)
 
 **`Result.transpose()`** — `Result[Option[T], E]` → `Option[Result[T, E]]`:
 
 - `Ok(Some(v))` → `Some(Ok(v))`
 - `Ok(Null())` → `Null()`
 - `Err(e)` → `Some(Err(e))`
-- `Ok(Nicht-Option-Wert)` → `Some(self)` (toleranter Fallback)
+- `Ok(Nicht-Option-Wert)` → wirft `TransposeError` (kein toleranter Fallback)
 
 Die Umkehr-Eigenschaft gilt für die drei Hauptfälle:
 `Some(Ok(v)).transpose().transpose() == Some(Ok(v))`,
 `Some(Err(e)).transpose().transpose() == Some(Err(e))`,
 `Null().transpose().transpose() == Null()`.
 
-*Avoid:* an eine Matrix-Transposition denken — `transpose` wirft nie und meint
-ausschließlich das Tauschen der beiden Schachtelungs-Ebenen.
+*Avoid:* an eine Matrix-Transposition denken — `transpose` meint ausschließlich
+das Tauschen der beiden Schachtelungs-Ebenen. Es wirft nur `TransposeError`, wenn
+der Inhalt nicht die erwartete `Result`/`Option`-Hülle ist (Programmierfehler);
+die regulären Fälle werfen nie.
 
 ### as_result / from_fn
 
@@ -413,13 +415,26 @@ Wert); `ResultError` ist eine **geworfene Ausnahme**.
 
 ### UnwrapFailedError
 
-`ResultError`-Subklasse und die einzige *bibliothekseigene* geworfene Ausnahme:
-ausgelöst von fehlgeschlagenem `unwrap`/`expect`/`unwrap_err`/`expect_err` — sowohl
-auf `Result` als auch auf `Option`. (Daneben wirft allein die verbotene
-Konstruktion `Some(None)` das eingebaute `ValueError`.)
+`ResultError`-Subklasse: ausgelöst von fehlgeschlagenem
+`unwrap`/`expect`/`unwrap_err`/`expect_err` — sowohl auf `Result` als auch auf
+`Option`. (Daneben gibt es `TransposeError` als zweite bibliothekseigene Ausnahme;
+und die verbotene Konstruktion `Some(None)` wirft das eingebaute `ValueError`.)
 
 - Invariante: Auch `Option.unwrap` wirft diese **Result-seitige** Klasse; es gibt
   keine eigene Option-seitige Fehlerklasse.
+
+### TransposeError
+
+`ResultError`-Subklasse. `Option.transpose` erwartet `Option[Result[...]]`,
+`Result.transpose` erwartet `Result[Option[...]]`. Python erzwingt das nicht auf
+Typ-Ebene; ein fremder Inhalt (`Some`/`Ok` mit Nicht-`Result`/Nicht-`Option`-Wert)
+ist ein **Programmierfehler** und wird laut abgewiesen statt still eingepackt.
+
+- Invariante: Tritt nur bei Vertragsbruch auf — die regulären `transpose`-Fälle
+  (`Ok`/`Err`/`Some`/`Null`) werfen nie.
+
+*Avoid:* `TransposeError` als normalen Kontrollfluss nutzen. Für „kein Wert" sind
+`Null()`/`Err(e)` zuständig; `TransposeError` signalisiert einen Typfehler.
 
 *Avoid:* eine eigene „OptionUnwrapError" erwarten — es gibt nur diese eine.
 

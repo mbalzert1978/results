@@ -4,6 +4,7 @@ from .results import (
     Ok,
     Result,
     ResultError,
+    TransposeError,
     UnwrapFailedError,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "Result",
     "ResultError",
     "Some",
+    "TransposeError",
     "UnwrapFailedError",
 ]

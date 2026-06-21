@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from results import Err, Null, Ok, Result, Some, UnwrapFailedError
+from results import Err, Null, Ok, Result, Some, TransposeError, UnwrapFailedError
 
 
 def get_test_error():
@@ -179,7 +179,7 @@ def test_map(input, func, expected):
     ],
 )
 def test_map_or(result, func, default, expected):
-    assert result.map_or(func, default) == expected
+    assert result.map_or(default, func) == expected
 
 
 @pytest.mark.parametrize(
@@ -576,17 +576,22 @@ def test_and_or_identity() -> None:
         (Ok(Some(42)), Some(Ok(42))),
         (Ok(Null()), Null()),
         (Err("e"), Some(Err("e"))),
-        (Ok(99), Some(Ok(99))),
     ],
     ids=[
         "transpose Ok(Some(v)) -> Some(Ok(v))",
         "transpose Ok(Null()) -> Null()",
         "transpose Err(e) -> Some(Err(e))",
-        "transpose Ok(non-option fallback) -> Some(self)",
     ],
 )
 def test_transpose(result, expected):
     assert result.transpose() == expected
+
+
+def test_transpose_on_non_option_payload_raises() -> None:
+    # Result.transpose expects Result[Option[...]]; an Ok holding a non-Option
+    # value is a contract violation — raise loudly, never silently wrap.
+    with pytest.raises(TransposeError, match="non-Option"):
+        Ok(99).transpose()
 
 
 def test_transpose_round_trip() -> None:

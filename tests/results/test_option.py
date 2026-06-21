@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from results import Err, Null, Ok, Option, Some, UnwrapFailedError
+from results import Err, Null, Ok, Option, Some, TransposeError, UnwrapFailedError
 
 
 @Option.as_option
@@ -603,17 +603,22 @@ def test_or_else_when_some_should_return_some(option, func, expected):
         (Some(Ok(5)), Ok(Some(5))),
         (Some(Err("error")), Err("error")),
         (Null(), Ok(Null())),
-        (Some(5), Ok(Some(5))),
     ],
     ids=[
         "transpose_when_some_ok_should_return_ok_with_some_value",
         "transpose_when_some_err_should_return_err",
         "transpose_when_null_should_return_ok_with_null",
-        "transpose_when_some_value_should_return_ok_some_value",
     ],
 )
 def test_transpose_with_result(option, expected):
     assert option.transpose() == expected
+
+
+def test_transpose_on_non_result_payload_raises() -> None:
+    # Option.transpose expects Option[Result[...]]; a Some holding a non-Result
+    # value is a contract violation — raise loudly, never silently wrap.
+    with pytest.raises(TransposeError, match="non-Result"):
+        Some(5).transpose()
 
 
 @pytest.mark.parametrize(
@@ -644,22 +649,18 @@ def test_flatten_some_returns_inner_option_identity() -> None:
     assert Some(inner_null).flatten() is inner_null
 
 
-@pytest.mark.parametrize(
-    "removed_name",
-    [
-        "OptionError",
-        "TransposeError",
-    ],
-    ids=[
-        "option_error_is_removed_from_public_api",
-        "transpose_error_is_removed_from_public_api",
-    ],
-)
-def test_dead_option_error_hierarchy_is_no_longer_exported(removed_name):
+def test_option_error_is_no_longer_exported() -> None:
     import results
 
-    assert not hasattr(results, removed_name)
-    assert removed_name not in results.__all__
+    assert not hasattr(results, "OptionError")
+    assert "OptionError" not in results.__all__
+
+
+def test_transpose_error_is_exported() -> None:
+    import results
+
+    assert results.TransposeError is TransposeError
+    assert "TransposeError" in results.__all__
 
 
 @pytest.mark.parametrize(
