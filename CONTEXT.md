@@ -84,8 +84,9 @@ nie eine `_content is None`- oder Truthiness-Abfrage im Methodenrumpf.
 
 - Invariante: `Option` selbst wird nie instanziiert (die ABC ist nicht direkt
   konstruierbar) — eine Instanz ist immer **genau eine** der Varianten `Some` oder
-  `Null`. Weil Abwesenheit ein eigener Typ ist, ist `Some(None)` ein legaler,
-  **vorhandener** Zustand und von `Null()` unterscheidbar (`Some(None) != Null()`).
+  `Null`. `None` ist ausschließlich das Absenz-Sentinel mit genau **einer**
+  Repräsentation, `Null()`. `Some(None)` ist daher verboten und wirft
+  `ValueError`; ein lebendes `Some` umschließt nie `None`.
 
 *Avoid:* „`typing.Optional`", „nullable Referenz". `Option` ist ein eigenes
 Wrapper-Objekt; `Optional[T]` ist bloß `T | None` ohne Methoden.
@@ -95,8 +96,9 @@ Wrapper-Objekt; `Optional[T]` ist bloß `T | None` ohne Methoden.
 Die vorhandene Variante von `Option`; `@final`-Subklasse, die genau einen Wert vom
 Typ `T` hält. `Some(value)` ist ihr Konstruktor.
 
-- Invariante: `Some(v).is_some()` ist **immer** `True` — auch für `v is None`
-  (`Some(None)` ist ein vorhandener Zustand, verschieden von `Null()`).
+- Invariante: ein lebendes `Some` umschließt **nie** `None`. `Some(v).is_some()`
+  ist `True` für jedes `v is not None`; `Some(None)` wirft `ValueError` (Guard in
+  `Some.__init__`).
 
 *Avoid:* „Just" (Haskell), „present()". `Some(5)` ist ein Container um `5`, nicht die
 Zahl `5` selbst.
@@ -107,8 +109,8 @@ Die abwesende Variante von `Option`; `@final`-Subklasse ohne gespeicherten Wert.
 `Null()` ist ihr Konstruktor und nimmt **keine** Argumente.
 
 - Invariante: `Null().is_none()` ist `True`; alle Varianten sind untereinander
-  gleich (`Null() == Null()`) und von jedem `Some(...)` verschieden — auch von
-  `Some(None)`.
+  gleich (`Null() == Null()`) und von jedem `Some(...)` verschieden. `Some(None)`
+  existiert nicht — die Konstruktion wirft `ValueError`.
 
 *Avoid:* „Pythons `None`", „Nil", „Nothing". `Null()` ist ein eigenständiger
 `Option`-Typ für Abwesenheit — nicht das `None` selbst und kein `Some`, das ein
@@ -138,9 +140,12 @@ den enthaltenen Wert oder einen Ersatz, ohne je zu werfen.
 - Invariante (`Result`): Der Rückfall greift genau bei `Err`.
 - Invariante (`Option`): Der Rückfall greift **strukturell** genau bei `Null` —
   per Polymorphie auf der Variante, nicht per Wahrheitswert. Folge: Falsy-Inhalte
-  wie `0`, `""`, `[]` (und auch `None`) sind **vorhanden** und werden zurückgegeben;
-  `Some(0).unwrap_or(42)` ist `0`. Dieselbe strukturelle Logik gilt für die
-  Iteration über ein `Option`: `Some(0)` iteriert zu `[0]`, `Null()` zu `[None]`.
+  wie `0`, `""`, `[]` sind **vorhanden** und werden zurückgegeben;
+  `Some(0).unwrap_or(42)` ist `0`. `None` ist kein Wert, sondern Absenz:
+  `Some(None)` ist verboten und wirft `ValueError`; Abwesenheit drückt man mit
+  `Null()` aus.
+  Dieselbe strukturelle Logik gilt für die Iteration über ein `Option`: `Some(0)`
+  iteriert zu `[0]`, `Null()` zu `[None]`.
 
 *Avoid:* anzunehmen, `Option.unwrap_or` prüfe Truthiness — der alte
 `self._content or default`-Trick ist weg. Es entscheidet die Variante (`Some` vs.
@@ -183,8 +188,8 @@ Brücken zwischen den beiden Familien, die einen Typ in den anderen überführen
 - Invariante: `ok_or`/`ok_or_else` entscheiden **strukturell** über die Variante
   (`Some` vs. `Null`), nicht per Truthiness oder `is None`, daher bleibt `Some(0)`
   ein `Ok(0)`.
-- `Ok(None).ok()` ergibt `Some(None)` — ein **vorhandenes** `Option`, das von
-  `Null()` verschieden ist (`Ok(_).ok()` ist immer ein `Some`, nie `Null()`).
+- `Ok(None).ok()` wirft `ValueError` — `Ok(_).ok()` würde `Some(_)` bauen, und
+  `Some(None)` ist verboten (`Ok(v).ok()` ist `Some(v)` für `v is not None`).
 
 *Avoid:* „Cast"/„isinstance-Umwandlung". Es entsteht jeweils ein **neues** Objekt der
 Zielfamilie; das Original wird nicht verändert.
@@ -195,7 +200,7 @@ Zielfamilie; das Original wird nicht verändert.
 in ein `Result` **eines** `Option`:
 
 - `Null()` → `Ok(Null())`
-- `Some(Ok(v))` → `Ok(Some(v))`
+- `Some(Ok(v))` → `Ok(Some(v))` (ist `v` `None`, wirft `Some(v)` → `ValueError`)
 - `Some(Err(e))` → `Err(e)`
 - nicht-`Result`-Inhalt → `Ok(self)` (unverändert eingepackt)
 
@@ -237,9 +242,10 @@ Wert); `ResultError` ist eine **geworfene Ausnahme**.
 
 ### UnwrapFailedError
 
-`ResultError`-Subklasse und die einzige tatsächlich geworfene Ausnahme der
-Bibliothek: ausgelöst von fehlgeschlagenem `unwrap`/`expect`/`unwrap_err`/`expect_err`
-— sowohl auf `Result` als auch auf `Option`.
+`ResultError`-Subklasse und die einzige *bibliothekseigene* geworfene Ausnahme:
+ausgelöst von fehlgeschlagenem `unwrap`/`expect`/`unwrap_err`/`expect_err` — sowohl
+auf `Result` als auch auf `Option`. (Daneben wirft allein die verbotene
+Konstruktion `Some(None)` das eingebaute `ValueError`.)
 
 - Invariante: Auch `Option.unwrap` wirft diese **Result-seitige** Klasse; es gibt
   keine eigene Option-seitige Fehlerklasse.
@@ -248,16 +254,16 @@ Bibliothek: ausgelöst von fehlgeschlagenem `unwrap`/`expect`/`unwrap_err`/`expe
 
 ## Beispieldialog
 
-**1 — `Some(None)` ist „vorhanden", verschieden von `Null()`**
+**1 — `Some(None)` ist verboten — `None` ist Absenz**
 
 > **Entwickler:** Ich packe ein optionales Ergebnis in `Some(result)`. Wenn `result`
 > mal `None` ist, behalte ich doch immer noch ein „vorhandenes" `Some`, oder?
 >
-> **Expertin:** Ja. `Option` ist ein versiegelter Zwei-Zustands-Typ: Abwesenheit
-> steckt im **Typ** (`Null`), nicht im Wert. `Some(None)` ist deshalb ein
-> vorhandener Zustand und von `Null()` unterscheidbar — `Some(None) == Null()` ist
-> `False`, und die `repr`s lauten `Some(None)` bzw. `Null()`. „Vorhanden, aber
-> `None`" ist hier ein gültiger, ausdrückbarer Zustand.
+> **Expertin:** Nein. `None` ist ausschließlich das Absenz-Sentinel und hat genau
+> **eine** Repräsentation: `Null()`. `Some(None)` ist deshalb verboten und wirft
+> `ValueError`. „Vorhanden, aber `None`" gibt es nicht: für einen echten Wert nimm
+> etwas, das nicht `None` ist; für Abwesenheit `Null()`. Hast du ein optionales
+> Zwischenergebnis (`T -> Option[U]`), nimm `and_then`, nicht `map` (`T -> U`).
 
 **2 — `Option.unwrap_or` prüft die Variante, nicht Truthiness**
 
@@ -266,9 +272,10 @@ Bibliothek: ausgelöst von fehlgeschlagenem `unwrap`/`expect`/`unwrap_err`/`expe
 >
 > **Expertin:** Richtig, es gibt `0` zurück. `Option.unwrap_or` entscheidet
 > **strukturell** über die Variante (`Some` vs. `Null`), nicht per Wahrheitswert.
-> Falsy-Werte wie `0`, `""`, `[]` (und `None`) bleiben „vorhanden" und werden
-> geliefert; nur `Null()` fällt auf den Default zurück. Genau wie auf der
-> `Result`-Seite: `Ok(0).unwrap_or(42)` ist `0`.
+> Falsy-Werte wie `0`, `""`, `[]` bleiben „vorhanden" und werden geliefert; nur
+> `Null()` fällt auf den Default zurück. `None` ist kein Wert — `Some(None)` ist
+> verboten (`ValueError`). Genau wie auf der `Result`-Seite: `Ok(0).unwrap_or(42)`
+> ist `0`.
 
 **3 — `map` vs. `and_then` (doppelte Verschachtelung)**
 

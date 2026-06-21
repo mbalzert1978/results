@@ -32,8 +32,8 @@ __`Result[T, E]`__ is an `abc.ABC` with two `@final` concrete subclasses, `Ok[T]
 
 __`Option[T]`__ mirrors `Result`'s design: an `abc.ABC` with two `@final` concrete subclasses, `Some[T]` (value present) and `Null[T]` (value absent). Absence is encoded in the *type* — there is no stored `None` sentinel — so behavior is selected by *polymorphism*, never by `_content is None` or truthiness checks inside a method. `Some(value)` and `Null()` are the only constructors (the base ABC is not directly instantiable). When adding a method to `Option`, add the `@abc.abstractmethod` stub plus a `Some` and a `Null` implementation. Consequences to keep in mind:
 
-- `Some(None) != Null()` — present-but-`None` is a distinct, legal state.
-- `unwrap_or` / `unwrap_or_else` / `__iter__` dispatch structurally on the variant, so falsy values like `0` / `""` / `[]` are treated as *present* (e.g. `Some(0).unwrap_or(42) == 0`).
+- `Some(None)` is forbidden and raises `ValueError` (guard in `Some.__init__`) — `None` is solely the absence sentinel, represented only by `Null()`. Any path that would wrap `None` raises too: `Ok(None).ok()`, `Some(5).map(lambda _: None)`, `Some(Ok(None)).transpose()`. Rule of thumb: `map` (`T -> U`) must not produce `None`; for a step that may be absent use `and_then` (`T -> Option[U]`), and for absence use `Null()`.
+- `unwrap_or` / `unwrap_or_else` / `__iter__` dispatch structurally on the variant, so falsy values like `0` / `""` / `[]` are treated as *present* (e.g. `Some(0).unwrap_or(42) == 0`). `None` is not a present value — `Some(None)` raises.
 
 __Cross-conversions__ tie the two families together: `Result.ok()` / `Result.err()` produce an `Option`; `Option.ok_or()` / `Option.ok_or_else()` produce a `Result`; `Option.transpose()` swaps an `Option[Result]` into a `Result[Option]`.
 

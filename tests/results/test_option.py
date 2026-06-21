@@ -268,7 +268,6 @@ def test_or_else_when_null_should_call_the_given_function_or_return_the_some_val
         (Some(0), 0),
         (Some(""), ""),
         (Some([]), []),
-        (Some(None), None),
     ],
     ids=[
         "test_iter_when_some_with_int_should_yield_int",
@@ -277,7 +276,6 @@ def test_or_else_when_null_should_call_the_given_function_or_return_the_some_val
         "test_iter_when_some_with_zero_should_yield_zero",
         "test_iter_when_some_with_empty_str_should_yield_empty_str",
         "test_iter_when_some_with_empty_list_should_yield_empty_list",
-        "test_iter_when_some_with_none_should_yield_none",
     ],
 )
 def test_iter(option, expected):
@@ -291,7 +289,6 @@ def test_iter(option, expected):
         (Null(), "Null()"),
         (Some("test"), "Some('test')"),
         (Null(), "Null()"),
-        (Some(None), "Some(None)"),
         (Some(0), "Some(0)"),
     ],
     ids=[
@@ -299,7 +296,6 @@ def test_iter(option, expected):
         "test_repr_when_null_with_none_should_return_formatted_string",
         "test_repr_when_some_with_str_should_return_formatted_string",
         "test_repr_when_null_with_str_should_return_formatted_string",
-        "test_repr_when_some_none_should_return_some_none_not_null",
         "test_repr_when_some_zero_should_return_some_zero",
     ],
 )
@@ -310,6 +306,19 @@ def test_repr(option, expected):
 def test_str_when_some_should_return_value_string() -> None:
     assert str(Some(10)) == "10"
     assert str(Null()) == "None"
+
+
+def test_some_none_is_forbidden() -> None:
+    # None is absence, not a value: Some(None) raises, as do paths that would
+    # wrap None (map -> None, transpose). Use Null() / and_then instead.
+    with pytest.raises(ValueError, match="Some.None. is forbidden"):
+        Some(None)
+    with pytest.raises(ValueError, match="Some.None. is forbidden"):
+        Option.some(None)
+    with pytest.raises(ValueError, match="Some.None. is forbidden"):
+        Some(5).map(lambda _: None)
+    with pytest.raises(ValueError, match="Some.None. is forbidden"):
+        Some(Ok(None)).transpose()
 
 
 def test_option_base_class_cannot_be_instantiated_directly() -> None:
@@ -323,13 +332,11 @@ def test_option_base_class_cannot_be_instantiated_directly() -> None:
         ({Some(1), Null(), Some(1), Null()}, 2),
         ({Some(1), Some(2)}, 2),
         ({Some("a"), Null()}, 2),
-        ({Some(None), Null(), Some(None), Null()}, 2),
     ],
     ids=[
         "test_hash_when_some_and_no_duplicates_should_return_correct_length",
         "test_hash_when_different_some_values_should_return_correct_length",
         "test_hash_when_some_and_null_strings_should_return_correct_length",
-        "test_hash_when_some_none_and_null_should_remain_distinct_members",
     ],
 )
 def test_hash(options, expected) -> None:
@@ -346,8 +353,6 @@ def test_hash(options, expected) -> None:
         (Some(10), Null(), False),
         (Some(10), Some(20), False),
         (Null(), Null(), True),
-        (Some(None), Null(), False),
-        (Some(None), Some(None), True),
         (Some(0), Null(), False),
         (Some(""), Null(), False),
     ],
@@ -359,8 +364,6 @@ def test_hash(options, expected) -> None:
         "test_eq_when_some_and_null_with_same_int_should_return_false",
         "test_eq_when_some_with_different_int_should_return_false",
         "test_eq_when_null_with_different_values_should_return_true",
-        "test_eq_when_some_none_and_null_should_return_false",
-        "test_eq_when_both_some_none_should_return_true",
         "test_eq_when_some_zero_and_null_should_return_false",
         "test_eq_when_some_empty_str_and_null_should_return_false",
     ],
@@ -378,7 +381,6 @@ def test_eq(option1, option2, expected):
         (Null(), Null(), False),
         (Some(10), Null(), True),
         (Some(10), Some(20), True),
-        (Some(None), Null(), True),
         (Some(0), Null(), True),
     ],
     ids=[
@@ -388,7 +390,6 @@ def test_eq(option1, option2, expected):
         "test_ne_when_null_with_same_str_should_return_false",
         "test_ne_when_some_and_null_with_same_int_should_return_true",
         "test_ne_when_some_with_different_int_should_return_true",
-        "test_ne_when_some_none_and_null_should_return_true",
         "test_ne_when_some_zero_and_null_should_return_true",
     ],
 )
@@ -435,7 +436,6 @@ def test_unwrap_when_null_should_raise_error() -> None:
         (Some(0), 42, 0),
         (Some(""), "x", ""),
         (Some([]), [1], []),
-        (Some(None), 42, None),
     ],
     ids=[
         "test_unwrap_or_when_some_should_return_value",
@@ -443,7 +443,6 @@ def test_unwrap_when_null_should_raise_error() -> None:
         "test_unwrap_or_when_some_zero_should_return_zero_not_default",
         "test_unwrap_or_when_some_empty_str_should_return_empty_str_not_default",
         "test_unwrap_or_when_some_empty_list_should_return_empty_list_not_default",
-        "test_unwrap_or_when_some_none_should_return_none_not_default",
     ],
 )
 def test_unwrap_or_when_some_value_should_return_value_or_provided_default(
@@ -459,14 +458,12 @@ def test_unwrap_or_when_some_value_should_return_value_or_provided_default(
         (Null(), lambda: 3, 3),
         (Some(0), lambda: 3, 0),
         (Some(""), lambda: "x", ""),
-        (Some(None), lambda: 3, None),
     ],
     ids=[
         "test_unwrap_or_else_when_some_should_return_value",
         "test_unwrap_or_else_when_null_should_call_func_and_return_value",
         "test_unwrap_or_else_when_some_zero_should_return_zero_not_func",
         "test_unwrap_or_else_when_some_empty_str_should_return_empty_str_not_func",
-        "test_unwrap_or_else_when_some_none_should_return_none_not_func",
     ],
 )
 def test_unwrap_or_else_when_some_value_should_return_value_or_compute_from_function(
@@ -499,14 +496,12 @@ def test_or_else_when_some_should_return_some(option, func, expected):
     [
         (Some(Ok(5)), Ok(Some(5))),
         (Some(Err("error")), Err("error")),
-        (Some(Ok(None)), Ok(Some(None))),
         (Null(), Ok(Null())),
         (Some(5), Ok(Some(5))),
     ],
     ids=[
         "transpose_when_some_ok_should_return_ok_with_some_value",
         "transpose_when_some_err_should_return_err",
-        "transpose_when_some_ok_none_should_return_ok_with_some_none",
         "transpose_when_null_should_return_ok_with_null",
         "transpose_when_some_value_should_return_ok_some_value",
     ],

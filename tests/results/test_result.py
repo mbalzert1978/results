@@ -119,6 +119,18 @@ def test_ok(result, expected):
     assert result.ok() == expected
 
 
+def test_ok_when_ok_none_is_forbidden() -> None:
+    # Ok(None).ok() would build Some(None), which is forbidden.
+    with pytest.raises(ValueError, match="Some.None. is forbidden"):
+        Ok(None).ok()
+
+
+def test_err_when_err_none_is_forbidden() -> None:
+    # Err(None).err() would build Some(None), which is forbidden.
+    with pytest.raises(ValueError, match="Some.None. is forbidden"):
+        Err(None).err()
+
+
 @pytest.mark.parametrize(
     "result, expected",
     [
