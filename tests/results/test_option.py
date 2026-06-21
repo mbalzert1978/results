@@ -617,6 +617,34 @@ def test_transpose_with_result(option, expected):
 
 
 @pytest.mark.parametrize(
+    "option, expected",
+    [
+        (Some(Some(5)), Some(5)),
+        (Some(Null()), Null()),
+        (Null(), Null()),
+    ],
+    ids=[
+        "some_some_to_some",
+        "some_null_to_null",
+        "null_to_null",
+    ],
+)
+def test_flatten_collapses_one_level_of_nesting(
+    option: Option, expected: Option
+) -> None:
+    assert option.flatten() == expected
+
+
+def test_flatten_some_returns_inner_option_identity() -> None:
+    # Some.flatten must return the inner Option unchanged — not a re-wrapped copy.
+    inner_some: Option[int] = Some(5)
+    assert Some(inner_some).flatten() is inner_some
+
+    inner_null: Option[int] = Null()
+    assert Some(inner_null).flatten() is inner_null
+
+
+@pytest.mark.parametrize(
     "removed_name",
     [
         "OptionError",
