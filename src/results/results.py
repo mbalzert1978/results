@@ -179,7 +179,7 @@ class Ok[T](Result[T, Any]):
         return False
 
     def is_err_and[E](self, fn: Callable[[E], bool]) -> bool:
-        return not self.is_ok()
+        return False
 
     def is_ok(self) -> Literal[True]:
         return True
