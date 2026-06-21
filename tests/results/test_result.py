@@ -522,3 +522,49 @@ def test_inspect_err(result, expected_calls, expected_identity):
     returned = result.inspect_err(calls.append)
     assert calls == expected_calls
     assert (returned is result) == expected_identity
+
+
+@pytest.mark.parametrize(
+    "result, res, expected",
+    [
+        (Ok(2), Ok(3), Ok(3)),
+        (Ok(2), Err("late"), Err("late")),
+        (Err("early"), Ok(3), Err("early")),
+        (Err("early"), Err("late"), Err("early")),
+    ],
+    ids=[
+        "and_ when Ok and Ok should return second Ok",
+        "and_ when Ok and Err should return Err",
+        "and_ when Err and Ok should return original Err",
+        "and_ when Err and Err should return original Err",
+    ],
+)
+def test_and_(result, res, expected):
+    assert result.and_(res) == expected
+
+
+@pytest.mark.parametrize(
+    "result, res, expected",
+    [
+        (Ok(2), Ok(3), Ok(2)),
+        (Ok(2), Err("fallback"), Ok(2)),
+        (Err("e"), Ok(3), Ok(3)),
+        (Err("e"), Err("fallback"), Err("fallback")),
+    ],
+    ids=[
+        "or_ when Ok and Ok should return original Ok",
+        "or_ when Ok and Err should return original Ok",
+        "or_ when Err and Ok should return Ok",
+        "or_ when Err and Err should return second Err",
+    ],
+)
+def test_or_(result, res, expected):
+    assert result.or_(res) == expected
+
+
+def test_and_or_identity() -> None:
+    """Ok.or_ and Err.and_ return the original instance (no reconstruction)."""
+    ok = Ok(1)
+    e = Err("e")
+    assert ok.or_(Err("other")) is ok
+    assert e.and_(Ok(99)) is e
