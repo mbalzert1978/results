@@ -204,6 +204,32 @@ das: `fn` wird mit dem `Err`-Wert aufgerufen, bei `Ok` kein Aufruf.
 erzeugt einen neuen Container; `inspect` lässt den Container unangetastet und
 dient allein dem Nebeneffekt.
 
+### `and_` / `or_`
+
+Zwei **eager** (eifrige) Kombinatoren, die einen vorhandenen `Result`-Wert
+kombinieren — im Gegensatz zu `and_then`/`or_else`, die eine Funktion übergeben
+und den Aufruf aufschieben:
+
+- `and_(res)` — gibt `res` zurück, wenn `self` `Ok` ist; gibt `self` zurück,
+  wenn `self` `Err` ist. Die übergebene `Err`-Seite von `self` propagiert direkt.
+- `or_(res)` — gibt `self` zurück, wenn `self` `Ok` ist; gibt `res` zurück,
+  wenn `self` `Err` ist. Der übergebene Wert tritt nur in Kraft, wenn `self`
+  ein Fehler war.
+
+Beide Methoden sind polymorphisch implementiert (`@abc.abstractmethod` auf `Result`,
+je eine Implementierung auf `Ok` und `Err`); kein `isinstance`- oder Flag-Check im
+Körper. Die **inerte** Variante gibt stets `self` zurück (kein neuer Container).
+
+- `Ok.or_(res) is self` — `Ok` bleibt unangetastet.
+- `Err.and_(res) is self` — der ursprüngliche Fehler wird weitergereicht.
+
+Unterschied zu `and_then`/`or_else`: Letztere bekommen eine **Callable** und führen
+sie lazy aus; `and_`/`or_` bekommen einen fertig ausgewerteten `Result`-Wert.
+
+*Avoid:* annehmen, `and_`/`or_` verhielten sich wie das Python-Schlüsselwort
+`and`/`or` (Short-Circuit auf Wahrheitswert). Sie operieren auf `Result`-Varianten
+per Polymorphie und ignorieren jegliche Wahrheitswert-Semantik des enthaltenen Werts.
+
 ### and_then
 
 Verkettet eine Folgeoperation, die selbst wieder ein `Result`/`Option` liefert

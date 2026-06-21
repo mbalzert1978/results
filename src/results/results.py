@@ -25,6 +25,14 @@ class Result[T, E](abc.ABC):
     """
 
     @abc.abstractmethod
+    def and_[U](self, res: Result[U, E]) -> Result[U, E]:
+        """Returns `res` if the result is [`Ok`], otherwise returns the [`Err`] value of `self`.
+
+        Eager counterpart of `and_then` (which takes a callable). Unlike `and_then`,
+        `res` is always evaluated before the call.
+        """
+
+    @abc.abstractmethod
     def and_then[U](self, op: Callable[[T], Result[U, E]]) -> Result[U, E]:
         """Calls `op` if the result is [`Ok`], otherwise returns the [`Err`] value of `self`.
         # Examples:
@@ -134,6 +142,14 @@ class Result[T, E](abc.ABC):
         """Converts from `Result<T, E>` to [`Option<T>`]."""
 
     @abc.abstractmethod
+    def or_[F](self, res: Result[T, F]) -> Result[T, F]:
+        """Returns `self` if the result is [`Ok`], otherwise returns `res`.
+
+        Eager counterpart of `or_else` (which takes a callable). Unlike `or_else`,
+        `res` is always evaluated before the call.
+        """
+
+    @abc.abstractmethod
     def or_else(self, op: Callable[[E], Result[T, E]]) -> Result[T, E]:
         """Returns the result if it is [`Ok`], otherwise calls `op` with the wrapped error and returns the result."""
 
@@ -179,6 +195,9 @@ class Ok[T](Result[T, Any]):
 
     def __init__(self, inner_value: T) -> None:
         self._inner_value = inner_value
+
+    def and_[U, E](self, res: Result[U, E]) -> Result[U, E]:
+        return res
 
     def and_then[U, E](self, op: Callable[[T], Result[U, E]]) -> Result[U, E]:
         return op(self._inner_value)
@@ -230,6 +249,9 @@ class Ok[T](Result[T, Any]):
     def ok(self) -> Option[T]:
         return Some(self._inner_value)
 
+    def or_[E, F](self, res: Result[T, F]) -> Result[T, F]:
+        return self
+
     def or_else[E](self, op: Callable[[E], Result[T, E]]) -> Result[T, E]:
         return Ok(self._inner_value)
 
@@ -268,6 +290,9 @@ class Err[E](Result[Any, E]):
 
     def __init__(self, inner_value: E) -> None:
         self._inner_value = inner_value
+
+    def and_[T, U](self, res: Result[U, E]) -> Result[U, E]:
+        return self
 
     def and_then[T, U](self, op: Callable[[T], Result[U, E]]) -> Result[U, E]:
         return self
@@ -318,6 +343,9 @@ class Err[E](Result[Any, E]):
 
     def ok(self) -> Option[Any]:
         return Null()
+
+    def or_[T, F](self, res: Result[T, F]) -> Result[T, F]:
+        return res
 
     def or_else[T](self, op: Callable[[E], Result[T, E]]) -> Result[T, E]:
         return op(self._inner_value)
