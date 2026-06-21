@@ -416,10 +416,14 @@ def test_unwrap_or_else(result, func, expected):
 def test_as_result() -> None:
     @Result.as_result
     def div(a: int, b: int) -> float:
+        """Divide a by b."""
         return a / b
 
     assert div(10, 2) == Ok(5.0)
     assert div(10, 0).map_err(str) == Err("division by zero")
+    # functools.wraps metadata is preserved by the decorator.
+    assert div.__name__ == "div"
+    assert div.__doc__ == "Divide a by b."
 
 
 def test_from_fn() -> None:
@@ -450,6 +454,7 @@ def test_hash():
         (Err(1), 1, True),
         (Ok(1), Ok(2), True),
         (Err("error"), Err("different error"), True),
+        (Ok(1), Err(1), True),
         (Ok(1), Ok(1), False),
         (Err("error"), Err("error"), False),
     ],
@@ -458,6 +463,7 @@ def test_hash():
         "ne when Err compared to non-Result should return True",
         "ne when Ok compared to different Ok should return True",
         "ne when Err compared to different Err should return True",
+        "ne when Ok compared to Err should return True",
         "ne when Ok compared to same Ok should return False",
         "ne when Err compared to same Err should return False",
     ],

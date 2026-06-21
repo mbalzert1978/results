@@ -40,14 +40,10 @@ class Result[T, E](abc.ABC):
         >>> assert div(10, 0).map_err(str) == Result.Err("division by zero")
         """
 
+        # ponytail: from_fn is the single source of the catch rule
         @functools.wraps(fn)
         def inner(*args: P.args, **kwargs: P.kwargs) -> Result[T, Exception]:
-            try:
-                result = fn(*args, **kwargs)
-            except Exception as exc:
-                return Err(exc)
-            else:
-                return Ok(result)
+            return Result.from_fn(fn, *args, **kwargs)
 
         return inner
 
@@ -164,9 +160,6 @@ class Ok[T](Result[T, Any]):
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Ok) and self._inner_value == other._inner_value
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
     def __init__(self, inner_value: T) -> None:
         self._inner_value = inner_value
 
@@ -246,9 +239,6 @@ class Err[E](Result[Any, E]):
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Err) and self._inner_value == other._inner_value
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
     def __hash__(self) -> int:
         return hash(self._inner_value) * 41
 
@@ -318,14 +308,6 @@ class Err[E](Result[Any, E]):
 
     def unwrap_or_else[T](self, fn: Callable[[E], T]) -> T:
         return fn(self._inner_value)
-
-
-class OptionError(Exception):
-    """Base result error."""
-
-
-class TransposeError(OptionError):
-    """Transpose failed error."""
 
 
 class Option[T](abc.ABC):

@@ -513,3 +513,21 @@ def test_or_else_when_some_should_return_some(option, func, expected):
 )
 def test_transpose_with_result(option, expected):
     assert option.transpose() == expected
+
+
+@pytest.mark.parametrize(
+    "removed_name",
+    [
+        "OptionError",
+        "TransposeError",
+    ],
+    ids=[
+        "option_error_is_removed_from_public_api",
+        "transpose_error_is_removed_from_public_api",
+    ],
+)
+def test_dead_option_error_hierarchy_is_no_longer_exported(removed_name):
+    import results
+
+    assert not hasattr(results, removed_name)
+    assert removed_name not in results.__all__

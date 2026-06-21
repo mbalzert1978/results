@@ -28,7 +28,7 @@ Bewusst **nicht** Teil dieses Scopes:
   nicht geworfen, sondern ein `Err`/`Null` weitergereicht.
 - **Kein vollständiger Port der Rust-API.** Es existiert nur eine bewusst kleine
   Methodenauswahl. Insbesondere gibt es **kein** `unwrap_or_default` und **kein**
-  `flatten`/`zip`, und `TransposeError` wird nirgendwo geworfen.
+  `flatten`/`zip`.
 - **Keine Go-artigen `(value, error)`-Tupel.** Ein Ergebnis ist immer ein einzelnes
   Objekt eines der beiden Typ-Familien, nie ein Paar.
 
@@ -199,8 +199,8 @@ in ein `Result` **eines** `Option`:
 - `Some(Err(e))` → `Err(e)`
 - nicht-`Result`-Inhalt → `Ok(self)` (unverändert eingepackt)
 
-*Avoid:* an eine Matrix-Transposition oder an `TransposeError` denken — `transpose`
-wirft nie und meint ausschließlich das Tauschen der beiden Schachtelungs-Ebenen.
+*Avoid:* an eine Matrix-Transposition denken — `transpose` wirft nie und meint
+ausschließlich das Tauschen der beiden Schachtelungs-Ebenen.
 
 ### as_result / from_fn
 
@@ -241,27 +241,10 @@ Wert); `ResultError` ist eine **geworfene Ausnahme**.
 Bibliothek: ausgelöst von fehlgeschlagenem `unwrap`/`expect`/`unwrap_err`/`expect_err`
 — sowohl auf `Result` als auch auf `Option`.
 
-- Invariante: Auch `Option.unwrap` wirft diese **Result-seitige** Klasse, nicht
-  einen `OptionError`.
+- Invariante: Auch `Option.unwrap` wirft diese **Result-seitige** Klasse; es gibt
+  keine eigene Option-seitige Fehlerklasse.
 
 *Avoid:* eine eigene „OptionUnwrapError" erwarten — es gibt nur diese eine.
-
-### OptionError
-
-Wurzel der Option-seitigen Fehlerhierarchie (`Exception`-Subklasse). Wird nie direkt
-geworfen.
-
-*Avoid:* `OptionError` als Oberklasse von `UnwrapFailedError` annehmen — letztere
-hängt unter `ResultError`, nicht unter `OptionError`.
-
-### TransposeError
-
-`OptionError`-Subklasse, deklariert für gescheiterte `transpose`-Aufrufe. Aktuell
-**toter Begriff**: `transpose` gibt in allen Fällen ein `Ok` zurück und wirft diese
-Ausnahme nirgends.
-
-*Avoid:* `try`/`except TransposeError` um `transpose` schreiben — der Block fängt nie
-etwas. Der Begriff existiert als reserviertes Vokabular, nicht als Laufzeitverhalten.
 
 ## Beispieldialog
 
