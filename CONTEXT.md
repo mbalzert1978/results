@@ -30,7 +30,7 @@ Bewusst **nicht** Teil dieses Scopes:
   nicht geworfen, sondern ein `Err`/`Null` weitergereicht.
 - **Kein vollständiger Port der Rust-API.** Es existiert nur eine bewusst kleine
   Methodenauswahl. Insbesondere gibt es **kein** `unwrap_or_default` und **kein**
-  `flatten`/`zip`.
+  `flatten`.
 - **Keine Go-artigen `(value, error)`-Tupel.** Ein Ergebnis ist immer ein einzelnes
   Objekt eines der beiden Typ-Familien, nie ein Paar.
 
@@ -164,6 +164,43 @@ im `map_or` des Arguments, nicht in einem Flag-Check auf `self`.
 *Avoid:* `and_` mit `and_then` verwechseln. `and_` nimmt eine fertige Option entgegen
 (eager); `and_then` nimmt eine Funktion `T -> Option[U]` (lazy, hat Zugriff auf den
 `Some`-Wert). Beide geben `Null()` zurück, wenn `self` `Null` ist.
+
+### zip / unzip
+
+Zwei `Option`-Methoden für das **Zusammenführen und Aufteilen** von Paaren:
+
+- `zip(other: Option[U]) -> Option[tuple[T, U]]` — kombiniert zwei Options zu einer
+  Option eines Tupels. Wahrheitstabelle:
+  `Some(a).zip(Some(b)) = Some((a, b))`,
+  `Some(a).zip(Null()) = Null()`,
+  `Null().zip(Some(b)) = Null()`,
+  `Null().zip(Null()) = Null()`.
+  Mit anderen Worten: `Some((a, b))` entsteht **nur**, wenn beide Seiten `Some` sind;
+  eine einzige `Null`-Seite ergibt `Null()`.
+
+- `unzip[A, B](self: Option[tuple[A, B]]) -> tuple[Option[A], Option[B]]` — teilt eine
+  Option eines Tupels in ein Paar von Options auf.
+  `Some((a, b)).unzip() = (Some(a), Some(b))`,
+  `Null().unzip() = (Null(), Null())`.
+
+Beide Methoden sind polymorphisch implementiert (`@abc.abstractmethod` auf `Option`,
+je eine Implementierung auf `Some` und `Null`); kein `isinstance`-, `is None`- oder
+Truthiness-Check im Körper. `Some.zip`'s Abhängigkeit von der Variante des Arguments
+wird via `other.map(lambda b: (self._value, b))` aufgelöst — `map` auf `Some` erzeugt
+`Some((a, b))`, `map` auf `Null` gibt `Null()` zurück; kein Flag-Check auf `self`.
+
+**Invarianten-Interaktion mit `Some(None)`:** `unzip` destrukturiert das Tupel und
+baut jede Komponente mit `Some(...)` auf. Enthält das Tupel `None` als Komponente
+(z. B. `Some((None, 5))` oder `Some((5, None))`), wirft `Some(None)` beim Konstruieren
+`ValueError("Some(None) is forbidden; use Null() for absence")`. Der Guard liegt
+**ausschließlich** in `Some.__init__` — `unzip` selbst fügt keinen `None`-Check hinzu.
+`Some((None, 5))` ist konstruierbar (das Tupel selbst ist nicht `None`); erst
+`unzip()` löst den Guard aus.
+
+*Avoid:* `zip` mit `and_` verwechseln. `and_` gibt die zweite Option unverändert
+zurück; `zip` kombiniert beide Werte in einem neuen `Some((a, b))`. `unzip` ist
+kein Gegenstück zu `and_then` — es operiert ausschließlich auf `Option[tuple[A, B]]`
+und gibt stets ein Paar von Options zurück.
 
 ### unwrap
 
