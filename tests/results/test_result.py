@@ -568,3 +568,37 @@ def test_and_or_identity() -> None:
     e = Err("e")
     assert ok.or_(Err("other")) is ok
     assert e.and_(Ok(99)) is e
+
+
+@pytest.mark.parametrize(
+    "result, expected",
+    [
+        (Ok(Some(42)), Some(Ok(42))),
+        (Ok(Null()), Null()),
+        (Err("e"), Some(Err("e"))),
+        (Ok(99), Some(Ok(99))),
+    ],
+    ids=[
+        "transpose Ok(Some(v)) -> Some(Ok(v))",
+        "transpose Ok(Null()) -> Null()",
+        "transpose Err(e) -> Some(Err(e))",
+        "transpose Ok(non-option fallback) -> Some(self)",
+    ],
+)
+def test_transpose(result, expected):
+    assert result.transpose() == expected
+
+
+def test_transpose_round_trip() -> None:
+    """transpose is the inverse of Option.transpose for the core cases."""
+    # Some(Ok(v)).transpose().transpose() == Some(Ok(v))
+    some_ok: Some[Result[int, str]] = Some(Ok(1))
+    assert some_ok.transpose().transpose() == some_ok
+
+    # Some(Err(e)).transpose().transpose() == Some(Err(e))
+    some_err: Some[Result[int, str]] = Some(Err("boom"))
+    assert some_err.transpose().transpose() == some_err
+
+    # Null().transpose().transpose() == Null()
+    null: Null[Result[int, str]] = Null()
+    assert null.transpose().transpose() == null
