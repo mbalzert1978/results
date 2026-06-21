@@ -314,10 +314,14 @@ class Option[T](abc.ABC):
     """
     `Option` is a sealed two-state type: a value is either present ([`Some`]) or
     absent ([`Null`]). Absence is encoded in the *type* (a separate [`Null`]
-    variant), never in a stored sentinel value, so `Some(None)` is a legal,
-    present state distinct from `Null()`. Behavior is selected by polymorphic
-    dispatch on the two `@final` variants; the base class is abstract and cannot
-    be instantiated directly.
+    variant), never in a stored sentinel value, and `None` is solely the absence
+    sentinel, represented only by `Null()`. `Some(None)` is therefore forbidden
+    and raises `ValueError` — as does any path that would wrap `None`
+    (`map`/`transpose` producing `None`, `Ok(None).ok()`). Use `Null()` for an
+    absent value, and `and_then` (`T -> Option[U]`) rather than `map` (`T -> U`)
+    when a step may be absent. Behavior is selected by polymorphic dispatch on
+    the two `@final` variants; the base class is abstract and cannot be
+    instantiated directly.
     """
 
     @staticmethod
@@ -614,6 +618,11 @@ class Some[T](Option[T]):
     __match_args__ = ("_value",)
 
     def __init__(self, value: T) -> None:
+        # ponytail: None is absence, not a value — use Null() for absence and
+        # and_then (T -> Option[U]) over map (T -> U). Runtime-only: PEP 695
+        # generics can't express "T is not None".
+        if value is None:
+            raise ValueError("Some(None) is forbidden; use Null() for absence")
         self._value = value
 
     def __str__(self) -> str:
@@ -695,7 +704,7 @@ class Null[T](Option[T]):
     __match_args__ = ()
 
     def __str__(self) -> str:
-        return f"{None}"
+        return "None"
 
     def __repr__(self) -> str:
         return "Null()"

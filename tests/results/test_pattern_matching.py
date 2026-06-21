@@ -22,15 +22,3 @@ def test_pattern_matching_on_null_type() -> None:
             reached = True
 
     assert reached
-
-
-def test_pattern_matching_distinguishes_some_none_from_null() -> None:
-    o = Some(None)
-    match o:
-        case Null():
-            branch = "null"
-        case Some(value):
-            branch = "some"
-
-    assert branch == "some"
-    assert value is None
