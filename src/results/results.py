@@ -164,9 +164,6 @@ class Ok[T](Result[T, Any]):
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Ok) and self._inner_value == other._inner_value
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
     def __init__(self, inner_value: T) -> None:
         self._inner_value = inner_value
 
@@ -245,9 +242,6 @@ class Err[E](Result[Any, E]):
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Err) and self._inner_value == other._inner_value
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
     def __hash__(self) -> int:
         return hash(self._inner_value) * 41
