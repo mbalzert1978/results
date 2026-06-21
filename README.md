@@ -17,18 +17,18 @@ This library provides a robust mechanism for handling operations that can result
 - **and_then**: Chains operations on `Ok` values.
 
   ```python
-  >>> assert Result.Ok(2).and_then(sq_then_to_string) == Ok("4")
-  >>> assert Result.Err("Not a number").and_then(sq_then_to_string) == Err("Not a number")
+  >>> assert Ok(2).and_then(lambda n: Ok(str(n * n))) == Ok("4")
+  >>> assert Err("Not a number").and_then(lambda n: Ok(str(n * n))) == Err("Not a number")
   ```
 
 - **as_result**: Decorator to convert function return values to `Result`.
 
   ```python
   >>> @Result.as_result
-  >>> def div(a: int, b: int) -> float:
+  ... def div(a: int, b: int) -> float:
   ...     return a / b
-  >>> assert div(10, 2) == Result.Ok(5.0)
-  >>> assert div(10, 0).map_err(str) == Result.Err("division by zero")
+  >>> assert div(10, 2) == Ok(5.0)
+  >>> assert div(10, 0).map_err(str) == Err("division by zero")
   ```
 
 - **from_fn**: Executes a function and returns a `Result`.
@@ -53,16 +53,16 @@ This library provides a robust mechanism for handling operations that can result
 
 ### Option
 
-- **Some**: Represents an optional value.
+- **Some**: Represents a present value.
 
   ```python
-  >>> assert Option.some(10) == Some(10)
+  >>> assert Some(10).unwrap() == 10
   ```
 
-- **Null**: Represents the absence of a value.
+- **Null**: Represents the absence of a value (takes no arguments).
 
   ```python
-  >>> assert Option.null("Error") == Null("Error")
+  >>> assert Null().unwrap_or(0) == 0
   ```
 
 - **from_fn, as_option**: Methods to handle optional values.

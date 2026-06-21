@@ -28,8 +28,10 @@ Bewusst **nicht** Teil dieses Scopes:
 - **Kein Ersatz für `try`/`except` als Sprachmittel.** Ausnahmen werden nur an
   den Rändern eingefangen (siehe `as_result`/`from_fn`); innerhalb der Kette wird
   nicht geworfen, sondern ein `Err`/`Null` weitergereicht.
-- **Kein vollständiger Port der Rust-API.** Es existiert nur eine bewusst kleine
-  Methodenauswahl. Insbesondere gibt es **kein** `unwrap_or_default`.
+- **Kein vollständiger Port der Rust-API.** Bereitgestellt wird eine kuratierte
+  Methodenauswahl, nicht die vollständige Rust-Oberfläche; insbesondere gibt es
+  **kein** `unwrap_or_default` (Python kennt keinen universellen Default-Wert je
+  Typ — wer einen Standard braucht, nimmt `unwrap_or(default)`).
 - **Keine Go-artigen `(value, error)`-Tupel.** Ein Ergebnis ist immer ein einzelnes
   Objekt eines der beiden Typ-Familien, nie ein Paar.
 
@@ -115,9 +117,7 @@ Die abwesende Variante von `Option`; `@final`-Subklasse ohne gespeicherten Wert.
 
 *Avoid:* „Pythons `None`", „Nil", „Nothing". `Null()` ist ein eigenständiger
 `Option`-Typ für Abwesenheit — nicht das `None` selbst und kein `Some`, das ein
-`None` umhüllt. Die in einigen Docstrings gezeigten Aufrufe mit Argument
-(`Null("Error")`, `Null(10)`) sind fehlerhaft: `Null` nimmt keine Parameter und
-würde mit `TypeError` scheitern.
+`None` umhüllt.
 
 ### is_none_or / inspect
 
